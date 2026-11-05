@@ -1,0 +1,33 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* New Slate & Emerald Theme */
+  --primary: #0f766e;         /* Deep Emerald */
+  --primary-hover: #115e59;   
+  --primary-soft: #ccfbf1;    /* Light emerald tint */
+  
+  --accent: #f59e0b;          /* Amber for warnings/highlights */
+  
+  --sidebar: #1e293b;         /* Dark Slate */
+  --sidebar-text: #cbd5e1;
+  
+  --bg: #f8fafc;              /* Very light cool gray */
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  
+  --text: #0f172a;            /* Deep slate text */
+  --muted: #64748b;
+
+  /* Status Colors */
+  --success: #10b981;  --success-soft: #d1fae5;
+  --warning: #d97706;  --warning-soft: #fef3c7;
+  --danger:  #ef4444;  --danger-soft:  #fee2e2;
+  --info:    #3b82f6;  --info-soft:    #dbeafe;
+
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --space-1: 4px;  --space-2: 8px;  --space-3: 16px;
+  --space-4: 24px; --space-5: 32px;
+}
