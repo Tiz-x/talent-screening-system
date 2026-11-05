@@ -1,13 +1,39 @@
 import { useState } from 'react';
-import { type Role } from '../api/mockData'; // <-- Added 'type' keyword here
+import { api } from '../api/api';
 
 export default function Login() {
-  const [role, setRole] = useState<Role>('APPLICANT');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('userRole', role);
-    window.location.href = '/'; // Force reload to update layout
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Call the real backend login endpoint
+      const data = await api.login(email, password);
+      
+      // Save the JWT token and user data to localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userRole', data.user.role);
+      localStorage.setItem('userName', data.user.name);
+      localStorage.setItem('userEmail', data.user.email);
+      
+      // Redirect to the Dashboard
+      window.location.href = '/'; 
+      
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Invalid email or password');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -16,33 +42,50 @@ export default function Login() {
         <h1 style={{ textAlign: 'center', color: 'var(--primary)', marginBottom: '8px' }}>TalentScreen</h1>
         <p style={{ textAlign: 'center', color: 'var(--muted)', marginBottom: '24px' }}>Sign in to your account</p>
         
+        {error && (
+          <div style={{ background: 'var(--danger-soft)', color: 'var(--danger)', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '13px' }}>
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleLogin}>
           <div className="field">
             <label>Email</label>
-            <input type="email" className="input" placeholder="you@aaua.edu.ng" defaultValue="test@aaua.edu.ng" required />
+            <input 
+              type="email" 
+              className="input" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              placeholder="e.g. test@aaua.edu.ng"
+              required 
+            />
           </div>
+          
           <div className="field">
             <label>Password</label>
-            <input type="password" className="input" placeholder="••••••••" defaultValue="password" required />
+            <input 
+              type="password" 
+              className="input" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="••••••••"
+              required 
+            />
           </div>
           
-          <div className="field" style={{ background: 'var(--primary-soft)', padding: '12px', borderRadius: '8px' }}>
-            <label style={{ color: 'var(--primary)' }}>Login As (For Testing)</label>
-            <select 
-              className="select" 
-              value={role} 
-              onChange={(e) => setRole(e.target.value as Role)}
-              style={{ borderColor: 'var(--primary)' }}
-            >
-              <option value="APPLICANT">Applicant</option>
-              <option value="EMPLOYER">Employer</option>
-            </select>
-          </div>
-          
-          <button type="submit" className="btn" style={{ width: '100%', justifyContent: 'center', marginTop: '16px' }}>
-            Sign In
+          <button 
+            type="submit" 
+            className="btn" 
+            style={{ width: '100%', justifyContent: 'center', marginTop: '24px' }} 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--muted)', marginTop: '24px' }}>
+          Don't have an account? Contact your admin.
+        </p>
       </div>
     </div>
   );
