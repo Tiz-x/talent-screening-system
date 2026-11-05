@@ -1,22 +1,59 @@
-import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import { prisma } from "./lib/prisma";
+import express from 'express';
+import cors from 'cors';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
-app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL }));
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is missing');
+}
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
+
+app.use(cors());
 app.use(express.json());
 
-app.get("/api/health", async (_req, res) => {
+// A basic route so you don't see "Cannot GET /"
+app.get('/', (req, res) => {
+  res.send('Talent Screening API is running smoothly!');
+});
+
+// REGISTER ENDPOINT
+app.post('/api/auth/register', async (req, res) => {
   try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: "ok", database: "connected" });
-  } catch {
-    res.status(500).json({ status: "error", database: "unreachable" });
+    const { name, email, password, role } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: role, // 'APPLICANT' or 'EMPLOYER'
+      },
+    });
+
+    res.status(201).json({ message: 'User created successfully', userId: user.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong' });
   }
 });
 
-const port = Number(process.env.PORT) || 4000;
-app.listen(port, () => console.log(`API running on port ${port}`));
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`API running on port ${PORT}`);
+});
