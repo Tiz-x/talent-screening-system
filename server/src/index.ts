@@ -1,18 +1,30 @@
-import express from "express";
-import cors from "cors";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcrypt";
-import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
+import express from 'express';
+import cors from 'cors';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import { calculateScore } from './services/screening';
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const app = express();
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL is missing");
+  throw new Error('DATABASE_URL is missing');
 }
 
 const adapter = new PrismaPg({ connectionString });
@@ -21,83 +33,580 @@ const prisma = new PrismaClient({ adapter });
 app.use(cors());
 app.use(express.json());
 
-// A basic route so you don't see "Cannot GET /"
-app.get("/", (req, res) => {
-  res.send("Talent Screening API is running smoothly!");
+// Basic route
+app.get('/', (req, res) => {
+  res.send('Talent Screening API is running smoothly!');
 });
 
-// REGISTER ENDPOINT
-app.post("/api/auth/register", async (req, res) => {
+// --- MIDDLEWARE ---
+const authenticateToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+  jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret', (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: 'Invalid token.' });
+    req.user = user;
+    next();
+  });
+};
+
+// --- AUTH ROUTES ---
+
+app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ error: "Email already in use" });
+      return res.status(400).json({ error: 'Email already in use' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: role, // 'APPLICANT' or 'EMPLOYER'
-      },
+      data: { name, email, password: hashedPassword, role },
     });
 
-    res
-      .status(201)
-      .json({ message: "User created successfully", userId: user.id });
+    res.status(201).json({ message: 'User created successfully', userId: user.id });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Something went wrong' });
   }
 });
 
-// LOGIN ENDPOINT
-app.post("/api/auth/login", async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Find user by email
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // 2. Compare password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // 3. Generate JWT Token
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || "fallback_secret",
-      { expiresIn: "1d" }, // Token expires in 1 day
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '1d' } 
     );
 
-    // 4. Send response
     res.status(200).json({
-      message: "Login successful",
+      message: 'Login successful',
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Something went wrong' });
   }
 });
 
+// --- PROFILE ROUTES ---
+
+app.post('/api/profile/applicant', authenticateToken, async (req: any, res: any) => {
+  try {
+    const { qualification, skills, experienceYrs, cvUrl } = req.body;
+    const userId = req.user.userId;
+
+    const profile = await prisma.applicantProfile.upsert({
+      where: { userId },
+      update: { qualification, skills, experienceYrs, cvUrl },
+      create: { userId, qualification, skills, experienceYrs, cvUrl },
+    });
+
+    res.status(200).json({ message: 'Profile saved successfully', profile });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to save profile' });
+  }
+});
+
+// --- VACANCY ROUTES ---
+
+app.post('/api/vacancies', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'EMPLOYER') {
+      return res.status(403).json({ error: 'Only employers can create vacancies' });
+    }
+
+    const { 
+      title, companyName, location, workMode, salary, type, description, 
+      deadline, minQualification, requiredSkills, requiredYears, weights 
+    } = req.body;
+
+    const vacancy = await prisma.vacancy.create({
+      data: {
+        employerId: req.user.userId,
+        title, companyName, location, workMode, salary, type, description,
+        deadline: new Date(deadline),
+        minQualification, requiredSkills,
+        requiredYears: parseInt(requiredYears),
+        weights, status: 'PUBLISHED'
+      }
+    });
+
+    res.status(201).json({ message: 'Vacancy created successfully', vacancy });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to create vacancy' });
+  }
+});
+
+// GET ALL VACANCIES
+app.get('/api/vacancies', authenticateToken, async (req, res) => {
+  try {
+    const vacancies = await prisma.vacancy.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { applications: true } 
+        }
+      }
+    });
+    res.status(200).json(vacancies);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch vacancies' });
+  }
+});
+
+
+// APPLY FOR A VACANCY
+app.post('/api/applications', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'APPLICANT') {
+      return res.status(403).json({ error: 'Only applicants can apply' });
+    }
+
+    const { vacancyId } = req.body;
+    const applicantId = req.user.userId;
+
+    // 1. Check if the vacancy exists and is still open
+    const vacancy = await prisma.vacancy.findUnique({ where: { id: vacancyId } });
+    if (!vacancy) return res.status(404).json({ error: 'Vacancy not found' });
+    
+    if (new Date(vacancy.deadline) < new Date()) {
+      return res.status(400).json({ error: 'The application deadline for this job has passed.' });
+    }
+
+    // 2. Check if they already applied
+    const existingApp = await prisma.application.findUnique({
+      where: { vacancyId_applicantId: { vacancyId, applicantId } }
+    });
+
+    if (existingApp) {
+      return res.status(400).json({ error: 'You have already applied for this job' });
+    }
+
+    // 3. Create the application
+    const application = await prisma.application.create({
+      data: { vacancyId, applicantId, status: 'SUBMITTED' }
+    });
+
+    res.status(201).json({ message: 'Application submitted successfully', application });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to submit application' });
+  }
+});
+
+
+// --- SCREENING ENGINE ROUTE ---
+
+app.get('/api/vacancies/:vacancyId/screen', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'EMPLOYER') {
+      return res.status(403).json({ error: 'Only employers can run screening' });
+    }
+
+    const { vacancyId } = req.params;
+
+    const vacancy = await prisma.vacancy.findUnique({ where: { id: vacancyId } });
+    if (!vacancy) return res.status(404).json({ error: 'Vacancy not found' });
+
+    const applications = await prisma.application.findMany({
+      where: { vacancyId },
+      include: {
+        applicant: { include: { applicantProfile: true } }
+      }
+    });
+
+        const results = applications.map((app) => {
+      const profile = app.applicant.applicantProfile;
+      
+      if (!profile) {
+        return {
+          applicationId: app.id, 
+          applicantName: app.applicant.name,
+          profile: null,
+          knockedOut: true, reason: 'Profile incomplete', totalScore: 0, breakdown: null
+        };
+      }
+
+      const scoreResult = calculateScore(vacancy, profile);
+
+      return {
+        applicationId: app.id, 
+        applicantName: app.applicant.name, 
+        profile: {
+          qualification: profile.qualification,
+          skills: profile.skills,
+          experienceYrs: profile.experienceYrs,
+          cvUrl: profile.cvUrl
+        },
+        ...scoreResult
+      };
+    });
+
+    // Sort by Total Score -> Skills Score -> Experience Score
+    results.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.breakdown?.skillsScore !== a.breakdown?.skillsScore) {
+         return (b.breakdown?.skillsScore || 0) - (a.breakdown?.skillsScore || 0);
+      }
+      return (b.breakdown?.expScore || 0) - (a.breakdown?.expScore || 0);
+    });
+
+    res.status(200).json({ vacancyTitle: vacancy.title, results });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Screening failed' });
+  }
+});
+
+
+
+// 1. Create Internship 
+app.post('/api/internships', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'EMPLOYER') return res.status(403).json({ error: 'Only employers can post internships' });
+    
+    const { title, companyName, description, location, duration, deadline } = req.body; // <-- Add companyName here
+
+    const internship = await prisma.internship.create({
+      data: {
+        employerId: req.user.userId,
+        title, 
+        companyName,
+        description, 
+        location, 
+        duration,
+        deadline: new Date(deadline),
+        status: 'PUBLISHED'
+      }
+    });
+    res.status(201).json({ message: 'Internship created', internship });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to create internship' });
+  }
+});
+
+// 2. Get All Internships (Applicants & Employers)
+app.get('/api/internships', authenticateToken, async (req, res) => {
+  try {
+    const internships = await prisma.internship.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json(internships);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch internships' });
+  }
+});
+
+// 3. Apply for Internship (Applicant)
+app.post('/api/internships/:internshipId/apply', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'APPLICANT') return res.status(403).json({ error: 'Only applicants can apply' });
+
+    const { internshipId } = req.params;
+    const applicantId = req.user.userId;
+
+    const existing = await prisma.internshipApplication.findUnique({
+      where: { internshipId_applicantId: { internshipId, applicantId } }
+    });
+
+    if (existing) return res.status(400).json({ error: 'You already applied for this internship' });
+
+    const application = await prisma.internshipApplication.create({
+      data: { internshipId, applicantId }
+    });
+    res.status(201).json({ message: 'Applied successfully', application });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to apply' });
+  }
+});
+
+// GET MY INTERNSHIP APPLICATIONS (Applicant)
+app.get('/api/internships/my', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'APPLICANT') {
+      return res.status(403).json({ error: 'Only applicants can view their applications' });
+    }
+
+    const applications = await prisma.internshipApplication.findMany({
+      where: { applicantId: req.user.userId },
+      include: {
+        internship: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.status(200).json(applications);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch internship applications' });
+  }
+});
+
+
+// GET APPLICANTS FOR A SPECIFIC INTERNSHIP (Employer)
+app.get('/api/internships/:internshipId/applicants', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'EMPLOYER') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const { internshipId } = req.params;
+
+    const applications = await prisma.internshipApplication.findMany({
+      where: { internshipId },
+      include: {
+        // We need to join with User to get the applicant's name
+        // Note: In our schema, InternshipApplication only has applicantId.
+        // We'll do a manual fetch for the user details.
+      }
+    });
+
+    const results = await Promise.all(applications.map(async (app) => {
+      const user = await prisma.user.findUnique({
+        where: { id: app.applicantId },
+        include: { applicantProfile: true }
+      });
+      return {
+        applicationId: app.id,
+        status: app.status,
+        applicantName: user?.name || 'Unknown',
+        email: user?.email || 'N/A',
+        profile: user?.applicantProfile || null
+      };
+    }));
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch internship applicants' });
+  }
+});
+
+
+// GET MY APPLICATIONS (Applicant)
+app.get('/api/applications/my', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'APPLICANT') {
+      return res.status(403).json({ error: 'Only applicants can view their applications' });
+    }
+
+    const applications = await prisma.application.findMany({
+      where: { applicantId: req.user.userId },
+      include: {
+        vacancy: true, 
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.status(200).json(applications);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch applications' });
+  }
+});
+
+
+// GET EMPLOYER DASHBOARD STATS & CHART DATA
+app.get('/api/dashboard/employer', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'EMPLOYER') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const totalVacancies = await prisma.vacancy.count({
+      where: { employerId: req.user.userId }
+    });
+
+    const applications = await prisma.application.findMany({
+      where: { vacancy: { employerId: req.user.userId } },
+      select: { status: true }
+    });
+
+    // Format data for the chart
+    const chartData = [
+      { name: 'Submitted', count: applications.filter(a => a.status === 'SUBMITTED').length },
+      { name: 'Under Review', count: applications.filter(a => a.status === 'UNDER_REVIEW').length },
+      { name: 'Shortlisted', count: applications.filter(a => a.status === 'SHORTLISTED').length },
+      { name: 'Assessment', count: applications.filter(a => a.status === 'ASSESSMENT').length },
+      { name: 'Interview', count: applications.filter(a => a.status === 'INTERVIEW').length },
+      { name: 'Selected', count: applications.filter(a => a.status === 'SELECTED').length },
+      { name: 'Rejected', count: applications.filter(a => a.status === 'REJECTED').length },
+    ];
+
+    res.status(200).json({ 
+      totalVacancies, 
+      totalApplications: applications.length,
+      shortlisted: applications.filter(a => a.status === 'SHORTLISTED').length,
+      interviews: applications.filter(a => a.status === 'INTERVIEW').length,
+      chartData 
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+
+// GET APPLICANT DASHBOARD STATS
+app.get('/api/dashboard/applicant', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'APPLICANT') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const applications = await prisma.application.findMany({
+      where: { applicantId: req.user.userId },
+      select: { status: true }
+    });
+
+    const totalApplications = applications.length;
+    const shortlisted = applications.filter(a => a.status === 'SHORTLISTED' || a.status === 'INTERVIEW' || a.status === 'SELECTED').length;
+    const interviews = applications.filter(a => a.status === 'INTERVIEW').length;
+
+    // Format data for the donut chart
+    const chartData = [
+      { name: 'Submitted', value: applications.filter(a => a.status === 'SUBMITTED').length },
+      { name: 'Under Review', value: applications.filter(a => a.status === 'UNDER_REVIEW').length },
+      { name: 'Shortlisted', value: applications.filter(a => a.status === 'SHORTLISTED').length },
+      { name: 'Interview', value: applications.filter(a => a.status === 'INTERVIEW').length },
+      { name: 'Rejected', value: applications.filter(a => a.status === 'REJECTED').length },
+    ].filter(item => item.value > 0); // Only show statuses that have at least 1 application
+
+    res.status(200).json({ totalApplications, shortlisted, interviews, chartData });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+
+// GET APPLICANT PROFILE
+app.get('/api/profile/applicant', authenticateToken, async (req: any, res: any) => {
+  try {
+    const profile = await prisma.applicantProfile.findUnique({
+      where: { userId: req.user.userId }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found. Please complete your profile first.' });
+    }
+
+    res.status(200).json(profile);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+
+// UPLOAD CV
+app.post('/api/upload/cv', authenticateToken, upload.single('cv'), async (req: any, res: any) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Upload to Cloudinary using a stream
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { resource_type: 'auto', folder: 'talent_screening_cvs' },
+      async (error, result) => {
+        if (error || !result) {
+          console.error(error);
+          return res.status(500).json({ error: 'Cloudinary upload failed' });
+        }
+
+        // Save the URL to the user's profile in the database
+        const updatedProfile = await prisma.applicantProfile.upsert({
+          where: { userId: req.user.userId },
+          update: { cvUrl: result.secure_url },
+          create: { 
+            userId: req.user.userId, 
+            qualification: 'BSC', // Defaults if they haven't created a profile yet
+            skills: [], 
+            experienceYrs: 0, 
+            cvUrl: result.secure_url 
+          },
+        });
+
+        res.status(200).json({ message: 'CV uploaded successfully', cvUrl: result.secure_url, profile: updatedProfile });
+      }
+    );
+
+    // End the stream with the file buffer
+    uploadStream.end(req.file.buffer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to upload CV' });
+  }
+});
+
+
+// SCHEDULE INTERVIEW (Employer)
+app.post('/api/interviews', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'EMPLOYER') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const { applicationId, date, time, mode, link, notes } = req.body;
+
+    // Create the interview record
+    const interview = await prisma.interview.create({
+      data: {
+        applicationId,
+        date: new Date(date),
+        time,
+        mode,
+        link,
+        notes
+      }
+    });
+
+    // Automatically update the application status to INTERVIEW
+    await prisma.application.update({
+      where: { id: applicationId },
+      data: { status: 'INTERVIEW' }
+    });
+
+    res.status(201).json({ message: 'Interview scheduled successfully', interview });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to schedule interview' });
+  }
+});
+
+
+// --- START SERVER ---
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`API running on port ${PORT}`);
+
+  
 });

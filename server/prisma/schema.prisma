@@ -55,10 +55,13 @@ model Vacancy {
   id               String   @id @default(uuid())
   employerId       String
   title            String
+  companyName      String
   location         String
+  workMode         String  
+  salary           String
   type             String
   description      String
-  status           String   @default("DRAFT") // DRAFT, PUBLISHED, CLOSED
+  status           String   @default("DRAFT")
   deadline         DateTime
   minQualification String
   requiredSkills   String[]
@@ -80,4 +83,41 @@ model Application {
   createdAt   DateTime          @default(now())
 
   @@unique([vacancyId, applicantId]) 
+}
+
+model Internship {
+  id          String   @id @default(uuid())
+  employerId  String
+  title       String
+  companyName  String
+  description String
+  location    String
+  duration    String
+  deadline    DateTime
+  status      String   @default("PUBLISHED")
+  createdAt   DateTime @default(now())
+
+  applications InternshipApplication[]
+}
+
+model InternshipApplication {
+  id           String   @id @default(uuid())
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id])
+  applicantId  String
+  status       String   @default("SUBMITTED")
+  createdAt    DateTime @default(now())
+
+  @@unique([internshipId, applicantId])
+}
+
+model Interview {
+  id            String   @id @default(uuid())
+  applicationId String   @unique
+  date          DateTime
+  time          String
+  mode          String   // Virtual or In-person
+  link          String?  // Zoom/Meet link or physical address
+  notes         String?
+  createdAt     DateTime @default(now())
 }
