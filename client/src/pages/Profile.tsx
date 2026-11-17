@@ -1,156 +1,235 @@
-import { useState } from 'react';
-import { Plus, X, UploadCloud, Save } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, UploadCloud, Save, User, GraduationCap, Briefcase, CheckCircle } from 'lucide-react';
+import { api } from '../api/api';
+import Spinner from '../components/Spinner';
 
 export default function Profile() {
-  const [skills, setSkills] = useState<string[]>(['React', 'TypeScript', 'CSS']);
+  const [qualification, setQualification] = useState('BSC');
+  const [experienceYrs, setExperienceYrs] = useState(1);
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
+  
+  const [cvUrl, setCvUrl] = useState<string | null>(null);
+  const [cvName, setCvName] = useState<string>(''); 
+  
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 1. Fetch profile data on load
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await api.getMyProfile();
+        setQualification(data.qualification);
+        setExperienceYrs(data.experienceYrs);
+        setSkills(data.skills);
+        setCvUrl(data.cvUrl);
+        
+        // Extract filename from URL
+        if (data.cvUrl) {
+          const fileName = data.cvUrl.split('/').pop()?.split('?')[0] || 'Uploaded_CV.pdf';
+          setCvName(fileName);
+        }
+      } catch {
+        console.log("No profile found, starting fresh.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleAddSkill = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newSkill.trim() !== '') {
       e.preventDefault();
-      if (!skills.includes(newSkill.trim())) {
-        setSkills([...skills, newSkill.trim()]);
-      }
+      if (!skills.includes(newSkill.trim())) setSkills([...skills, newSkill.trim()]);
       setNewSkill('');
     }
   };
 
-  const removeSkill = (skillToRemove: string) => {
-    setSkills(skills.filter(s => s !== skillToRemove));
+  const handleSave = async () => {
+    setIsSaving(true);
+    setMessage('');
+    try {
+      await api.saveApplicantProfile({ qualification, skills, experienceYrs, cvUrl });
+      setMessage('Profile saved to database successfully!');
+    } catch {
+      setMessage('Failed to save profile.');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File is too large. Max size is 5MB.");
+      return;
+    }
+
+    setCvName(file.name);
+    setIsUploading(true);
+    setMessage('');
+    try {
+      const data = await api.uploadCV(file);
+      setCvUrl(data.cvUrl);
+      setMessage('CV uploaded successfully!');
+    } catch (err: unknown) {
+      if (err instanceof Error) setMessage(err.message);
+      else setMessage('Failed to upload CV');
+      setCvName(''); 
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  if (isLoading) return <div style={{ padding: '40px' }}><Spinner /></div>;
 
   return (
     <div>
       <div className="page-header">
         <div>
           <h1>My Profile</h1>
-          <p style={{ color: 'var(--muted)' }}>Keep your information updated for accurate screening</p>
+          <p style={{ color: 'var(--muted)' }}>Complete your profile for accurate screening</p>
         </div>
-        <button className="btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Save size={16} /> Save Changes
+        <button 
+          className="btn" 
+          onClick={handleSave} 
+          disabled={isSaving}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}
+        >
+          <Save size={18} /> {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+      {message && (
+        <div style={{ padding: '12px', background: message.includes('success') ? 'var(--success-soft)' : 'var(--danger-soft)', color: message.includes('success') ? 'var(--success)' : 'var(--danger)', borderRadius: '6px', marginBottom: '24px', fontWeight: '500' }}>
+          {message}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', alignItems: 'start' }}>
         
-        {/* LEFT COLUMN: Structured Data */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Personal & Qualification */}
+          {/* Academic Info */}
           <div className="card">
-            <h2 style={{ marginBottom: '16px' }}>Academic & Personal</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+              <div style={{ background: 'var(--primary-soft)', padding: '10px', borderRadius: '8px', color: 'var(--primary)' }}>
+                <GraduationCap size={20} />
+              </div>
+              <h2 style={{ margin: 0 }}>Academic & Personal</h2>
+            </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div className="field">
                 <label>Full Name</label>
-                <input type="text" className="input" defaultValue="John Doe" />
+                <input type="text" className="input" defaultValue={localStorage.getItem('userName') || ''} disabled style={{ background: 'var(--bg)', cursor: 'not-allowed' }} />
               </div>
               <div className="field">
-                <label>Matric Number / ID</label>
-                <input type="text" className="input" defaultValue="AAUA/2022/001" />
+                <label>Highest Qualification</label>
+                <select className="select" value={qualification} onChange={(e) => setQualification(e.target.value)}>
+                  <option value="OND">OND</option>
+                  <option value="HND">HND</option>
+                  <option value="BSC">BSc</option>
+                  <option value="MSC">MSc</option>
+                </select>
               </div>
-            </div>
-
-            <div className="field">
-              <label>Highest Qualification</label>
-              <select className="select" defaultValue="BSC">
-                <option value="OND">OND (Ordinary National Diploma)</option>
-                <option value="HND">HND (Higher National Diploma)</option>
-                <option value="BSC">BSc (Bachelor's Degree)</option>
-                <option value="MSC">MSc (Master's Degree)</option>
-              </select>
-              <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
-                This is used for the knockout stage (Section 3.10).
-              </p>
             </div>
           </div>
 
           {/* Skills */}
           <div className="card">
-            <h2 style={{ marginBottom: '16px' }}>Skills</h2>
-            <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>
-              Type a skill and press <strong>Enter</strong> to add it. The screening engine matches these exactly.
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+              <div style={{ background: 'var(--primary-soft)', padding: '10px', borderRadius: '8px', color: 'var(--primary)' }}>
+                <User size={20} />
+              </div>
+              <h2 style={{ margin: 0 }}>Skills</h2>
+            </div>
             
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
               {skills.map(skill => (
-                <span key={skill} style={{ background: 'var(--primary-soft)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '4px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
-                  {skill}
-                  <X size={14} style={{ cursor: 'pointer', opacity: 0.7 }} onClick={() => removeSkill(skill)} />
+                <span key={skill} style={{ background: 'var(--primary)', color: '#fff', padding: '8px 14px', borderRadius: '6px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
+                  {skill} <X size={14} style={{ cursor: 'pointer' }} onClick={() => setSkills(skills.filter(s => s !== skill))} />
                 </span>
               ))}
             </div>
-
-            <div className="field" style={{ marginBottom: 0 }}>
-              <input 
-                type="text" 
-                className="input" 
-                placeholder="e.g. Node.js, Python, Figma..." 
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                onKeyDown={handleAddSkill}
-              />
-            </div>
+            <input type="text" className="input" placeholder="Type a skill and press Enter..." value={newSkill} onChange={(e) => setNewSkill(e.target.value)} onKeyDown={handleAddSkill} />
           </div>
 
           {/* Experience */}
           <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2>Experience</h2>
-              <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '12px' }}>
-                <Plus size={14} /> Add Entry
-              </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+              <div style={{ background: 'var(--primary-soft)', padding: '10px', borderRadius: '8px', color: 'var(--primary)' }}>
+                <Briefcase size={20} />
+              </div>
+              <h2 style={{ margin: 0 }}>Experience</h2>
             </div>
             
-            <div style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '6px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="field">
-                  <label>Job Title</label>
-                  <input type="text" className="input" defaultValue="Frontend Intern" />
-                </div>
-                <div className="field">
-                  <label>Field / Category</label>
-                  <select className="select" defaultValue="Web Development">
-                    <option value="Web Development">Web Development</option>
-                    <option value="Data Science">Data Science</option>
-                    <option value="Design">Design</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: 0 }}>
-                <div className="field" style={{ marginBottom: 0 }}>
-                  <label>Duration (Years)</label>
-                  <input type="number" className="input" defaultValue="1" />
-                </div>
-                <div className="field" style={{ marginBottom: 0 }}>
-                  <label>Company</label>
-                  <input type="text" className="input" defaultValue="TechCorp" />
-                </div>
-              </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>Total Years of Relevant Experience</label>
+              <input type="number" className="input" value={experienceYrs} onChange={(e) => setExperienceYrs(parseInt(e.target.value) || 0)} />
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: CV Upload & Certifications */}
+        {/* CV Upload */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="card">
-            <h2 style={{ marginBottom: '16px' }}>CV / Resume</h2>
-            <div style={{ border: '2px dashed var(--border)', borderRadius: '8px', padding: '32px 16px', textAlign: 'center', cursor: 'pointer', background: 'var(--bg)' }}>
-              <UploadCloud size={32} style={{ color: 'var(--primary)', margin: '0 auto 12px auto' }} />
-              <p style={{ fontWeight: '500', fontSize: '14px' }}>Click to upload CV</p>
-              <p style={{ fontSize: '12px', color: 'var(--muted)' }}>PDF or DOCX (Max 5MB)</p>
-            </div>
-          </div>
+            <h2 style={{ marginBottom: '20px' }}>CV / Resume</h2>
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              accept=".pdf,.doc,.docx" 
+              onChange={handleFileChange} 
+            />
 
-          <div className="card">
-            <h2 style={{ marginBottom: '16px' }}>Certifications</h2>
-            <div className="field">
-              <label>Certification Name</label>
-              <input type="text" className="input" defaultValue="Meta Frontend Developer" />
-            </div>
-            <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
-              <Plus size={16} /> Add Certification
-            </button>
+            {cvUrl ? (
+              <div style={{ border: '1px solid var(--success)', background: 'var(--success-soft)', borderRadius: '8px', padding: '24px', textAlign: 'center' }}>
+                <CheckCircle size={40} style={{ color: 'var(--success)', margin: '0 auto 12px auto' }} />
+                <p style={{ fontWeight: '600', color: 'var(--success)', marginBottom: '8px' }}>CV Uploaded Successfully</p>
+                
+                <div style={{ background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid var(--border)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>
+                    {cvName}
+                  </span>
+                  <a href={cvUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600', textDecoration: 'none' }}>
+                    View
+                  </a>
+                </div>
+
+                <button 
+                  className="btn btn-outline" 
+                  style={{ width: '100%', fontSize: '13px', padding: '8px' }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Upload New File
+                </button>
+              </div>
+            ) : (
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                style={{ border: '2px dashed var(--border)', borderRadius: '8px', padding: '40px 16px', textAlign: 'center', cursor: 'pointer', background: 'var(--bg)', transition: 'all 0.2s' }}
+              >
+                {isUploading ? (
+                  <p style={{ fontWeight: '600', color: 'var(--primary)' }}>Uploading to Cloudinary...</p>
+                ) : (
+                  <>
+                    <UploadCloud size={40} style={{ color: 'var(--primary)', margin: '0 auto 16px auto' }} />
+                    <p style={{ fontWeight: '600', fontSize: '14px', marginBottom: '4px' }}>Click to upload CV</p>
+                    <p style={{ fontSize: '12px', color: 'var(--muted)' }}>PDF or DOCX (Max 5MB)</p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

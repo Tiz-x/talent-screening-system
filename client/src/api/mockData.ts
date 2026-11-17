@@ -1,12 +1,15 @@
 export type Role = 'APPLICANT' | 'EMPLOYER';
 
 export const getLoggedInUser = () => {
-  const savedRole = (localStorage.getItem('userRole') as Role) || 'APPLICANT';
+  const role = (localStorage.getItem('userRole') as Role) || 'APPLICANT';
+  const name = localStorage.getItem('userName') || 'Guest User';
+  const email = localStorage.getItem('userEmail') || '';
+  
   return {
-    id: '1',
-    name: savedRole === 'EMPLOYER' ? 'TechNova HR' : 'John Doe',
-    email: savedRole === 'EMPLOYER' ? 'hr@technova.com' : 'john@aaua.edu.ng',
-    role: savedRole,
+    id: '1', 
+    name: name,
+    email: email,
+    role: role,
   };
 };
 
