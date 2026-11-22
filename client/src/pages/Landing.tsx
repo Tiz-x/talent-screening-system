@@ -8,7 +8,7 @@ import {
   Briefcase,
   Sparkles,
 } from "lucide-react";
-import "./Landing.css";
+import "./landing.css";
 
 export default function Landing() {
   const navigate = useNavigate();
