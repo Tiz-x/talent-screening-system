@@ -6,6 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend
 } from 'recharts';
+import './Dashboard.css';
 
 interface ChartData {
   name: string;
@@ -53,7 +54,6 @@ export default function Dashboard() {
     fetchStats();
   }, [isEmployer]);
 
-  // Colors for the charts
   const BAR_COLORS = ['#0f766e', '#0ea5e9', '#f59e0b', '#8b5cf6', '#10b981', '#059669', '#ef4444'];
   const PIE_COLORS = ['#0ea5e9', '#f59e0b', '#0f766e', '#8b5cf6', '#ef4444'];
 
@@ -92,7 +92,7 @@ export default function Dashboard() {
       </div>
 
       {/* Chart Section */}
-      <div className="card" style={{ marginBottom: '24px' }}>
+      <div className="card dash-chart-card">
         <h2>{isEmployer ? 'Application Funnel' : 'Application Status Breakdown'}</h2>
         <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '24px' }}>
           {isEmployer 
@@ -100,7 +100,7 @@ export default function Dashboard() {
             : "A visual breakdown of the current status of all your job applications."}
         </p>
         
-        <div style={{ height: '300px', width: '100%' }}>
+        <div className="dash-chart-wrap">
           {isEmployer && employerStats?.chartData ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={employerStats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -136,7 +136,7 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)' }}>
+            <div className="dash-chart-empty">
               No application data to display yet.
             </div>
           )}

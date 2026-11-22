@@ -1,0 +1,352 @@
+/* =========================================
+   EMPLOYER RANKING PAGE
+   ========================================= */
+
+/* ---------- Header ---------- */
+.er-header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.er-select-wrap {
+  width: 300px;
+}
+
+.er-select {
+  width: 300px;
+  margin-bottom: 0;
+  font-weight: 500;
+}
+
+.er-refresh-btn {
+  white-space: nowrap;
+  padding: 10px 24px;
+}
+
+/* ---------- Empty State ---------- */
+.er-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.er-empty-icon {
+  background: var(--bg);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: var(--muted);
+}
+
+.er-empty h2 {
+  margin-bottom: 12px;
+  font-size: 24px;
+}
+
+.er-empty p {
+  color: var(--muted);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* ---------- Content ---------- */
+.er-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Stats bar */
+.er-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.er-stat-card {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.er-stat-icon {
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.er-stat-icon-primary { background: var(--primary-soft); color: var(--primary); }
+.er-stat-icon-success { background: var(--success-soft); color: var(--success); }
+.er-stat-icon-danger  { background: var(--danger-soft);  color: var(--danger); }
+
+.er-stat-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+.er-stat-value {
+  font-size: 28px;
+  margin: 0;
+}
+
+/* Split view */
+.er-split {
+  /* Override the hardcoded 1fr 450px */
+  grid-template-columns: 1fr 450px;
+}
+
+.er-table-card {
+  padding: 0;
+  overflow: hidden;
+  align-self: start;
+  min-width: 0;
+}
+
+/* Table horizontal scroll safety */
+.er-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.er-table-scroll .table {
+  min-width: 480px; /* ensures 4 columns stay readable; scrolls if needed */
+}
+
+.er-detail {
+  align-self: start;
+  min-width: 0;
+}
+
+/* Knockout box */
+.er-knockout-box {
+  background: var(--danger-soft);
+  color: var(--danger);
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+/* Total score */
+.er-total-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Profile grid */
+.er-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.er-profile-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.er-cv-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+  text-decoration: none;
+}
+
+/* Actions */
+.er-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.er-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------- Modal ---------- */
+.er-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.er-modal {
+  width: 100%;
+  max-width: 500px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.er-modal-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+}
+
+.er-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.er-modal-close:hover { background: var(--border); }
+
+.er-modal-form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.er-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+/* Tablet: stats 3 → 2 cols, split collapses */
+@media (max-width: 1024px) {
+  .er-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .er-split {
+    grid-template-columns: 1fr; /* stack table + detail */
+  }
+
+  .er-table-scroll .table {
+    min-width: 0; /* full width now */
+  }
+}
+
+/* Small tablet / mobile: header wraps, selector full width */
+@media (max-width: 768px) {
+  .er-header {
+    align-items: stretch;
+  }
+
+  .er-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .er-select-wrap {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .er-select {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .er-refresh-btn {
+    flex: 1;
+    padding: 10px 16px;
+  }
+
+  .er-stats {
+    grid-template-columns: 1fr;
+  }
+
+  /* Keep table scrollable */
+  .er-table-scroll .table {
+    min-width: 480px;
+  }
+}
+
+/* Small phones: actions stack, modal becomes bottom sheet */
+@media (max-width: 480px) {
+  .er-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .er-actions-row {
+    flex-direction: column;
+  }
+
+  .er-actions-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .er-modal-overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+
+  .er-modal {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .er-modal-header { padding: 20px 16px; }
+  .er-modal-form   { padding: 20px 16px; }
+  .er-modal-footer {
+    flex-direction: column-reverse;
+  }
+  .er-modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .er-empty {
+    padding: 48px 16px;
+  }
+}

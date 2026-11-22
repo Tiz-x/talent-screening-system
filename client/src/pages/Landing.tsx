@@ -8,76 +8,30 @@ import {
   Briefcase,
   Sparkles,
 } from "lucide-react";
+import "./Landing.css";
 
 export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--surface)",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "var(--font)",
-      }}
-    >
+    <div className="landing-root">
       {/* NAVBAR */}
-      <nav
-        style={{
-          padding: "20px 48px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "rgba(255, 255, 255, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--border)",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "24px",
-            fontWeight: "800",
-            color: "var(--primary)",
-            letterSpacing: "-0.5px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <div
-            style={{
-              background: "var(--primary)",
-              color: "#fff",
-              padding: "6px",
-              borderRadius: "8px",
-              display: "flex",
-            }}
-          >
+      <nav className="landing-nav">
+        <div className="landing-brand">
+          <div className="landing-brand-icon">
             <Sparkles size={20} />
           </div>
           TalentScreen
         </div>
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+        <div className="landing-nav-actions">
           <button
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--text)",
-              fontWeight: "600",
-              cursor: "pointer",
-              fontSize: "15px",
-            }}
+            className="landing-signin"
             onClick={() => navigate("/login")}
           >
             Sign In
           </button>
           <button
-            className="btn"
-            style={{ padding: "10px 20px", borderRadius: "8px" }}
+            className="btn landing-cta"
             onClick={() => navigate("/register")}
           >
             Get Started
@@ -86,135 +40,36 @@ export default function Landing() {
       </nav>
 
       {/* HERO SECTION */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "100px 24px",
-          // Using Emerald/Teal soft radial gradients to match the theme
-          background:
-            "radial-gradient(circle at 10% 20%, var(--primary-soft) 0%, transparent 40%), radial-gradient(circle at 90% 80%, #ccfbf1 0%, transparent 40%)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
+      <div className="landing-hero">
         {/* Subtle Grid Pattern */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage:
-              "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-            opacity: 0.3,
-            zIndex: 0,
-          }}
-        ></div>
+        <div className="landing-hero-grid" aria-hidden="true" />
 
-        <div
-          style={{
-            maxWidth: "1100px",
-            width: "100%",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "64px",
-            alignItems: "center",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <div className="landing-hero-inner">
           <div>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "#fff",
-                border: "1px solid var(--border)",
-                padding: "6px 16px",
-                borderRadius: "999px",
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "var(--primary)",
-                marginBottom: "32px",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "8px",
-                  height: "8px",
-                  background: "var(--success)",
-                  borderRadius: "50%",
-                }}
-              ></span>
+            <div className="landing-badge">
+              <span className="landing-badge-dot" />
               Official AAUA Recruitment Platform
             </div>
 
-            <h1
-              style={{
-                fontSize: "56px",
-                lineHeight: "1.1",
-                marginBottom: "24px",
-                color: "var(--text)",
-                fontWeight: "800",
-                letterSpacing: "-1px",
-              }}
-            >
+            <h1 className="landing-heading">
               Smart Hiring for <br />
-              {/* Gradient uses Primary and Accent colors */}
-              <span
-                style={{
-                  background:
-                    "linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Top Talent.
-              </span>
+              <span className="landing-heading-gradient">Top Talent.</span>
             </h1>
 
-            <p
-              style={{
-                fontSize: "18px",
-                color: "var(--muted)",
-                marginBottom: "40px",
-                lineHeight: "1.6",
-                maxWidth: "480px",
-              }}
-            >
+            <p className="landing-subheading">
               Connecting Adekunle Ajasin University students and graduates with
               verified employers through a fair, transparent screening engine.
             </p>
 
-            <div style={{ display: "flex", gap: "16px" }}>
+            <div className="landing-hero-actions">
               <button
-                className="btn"
-                style={{
-                  padding: "16px 32px",
-                  fontSize: "16px",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 14px rgba(15, 118, 110, 0.3)",
-                }}
+                className="btn landing-hero-cta"
                 onClick={() => navigate("/register")}
               >
                 Find a Job <ArrowRight size={20} />
               </button>
               <button
-                className="btn btn-outline"
-                style={{
-                  padding: "16px 32px",
-                  fontSize: "16px",
-                  borderRadius: "8px",
-                  background: "#fff",
-                }}
+                className="btn btn-outline landing-hero-cta-secondary"
                 onClick={() => navigate("/register")}
               >
                 Post a Vacancy
@@ -223,93 +78,34 @@ export default function Landing() {
           </div>
 
           {/* Right side floating UI mockup */}
-          <div style={{ position: "relative", perspective: "1000px" }}>
-            <div
-              style={{
-                background: "#fff",
-                padding: "32px",
-                borderRadius: "24px",
-                boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
-                border: "1px solid var(--border)",
-                position: "relative",
-                zIndex: 2,
-                transform: "rotateY(-5deg) rotateX(5deg)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "16px",
-                  marginBottom: "24px",
-                }}
-              >
-                <div
-                  style={{
-                    background: "var(--primary-soft)",
-                    padding: "16px",
-                    borderRadius: "16px",
-                  }}
-                >
-                  <Briefcase size={28} style={{ color: "var(--primary)" }} />
+          <div className="landing-mockup-wrap">
+            <div className="landing-mockup-card">
+              <div className="landing-mockup-head">
+                <div className="landing-mockup-icon">
+                  <Briefcase size={28} />
                 </div>
                 <div>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "20px",
-                      color: "var(--text)",
-                    }}
-                  >
-                    Frontend Developer
-                  </h3>
-                  <p
-                    style={{
-                      color: "var(--muted)",
-                      fontSize: "14px",
-                      margin: 0,
-                    }}
-                  >
+                  <h3 className="landing-mockup-title">Frontend Developer</h3>
+                  <p className="landing-mockup-sub">
                     TechNova Solutions • Remote
                   </p>
                 </div>
               </div>
 
-              <div style={{ marginBottom: "24px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <span style={{ color: "var(--muted)" }}>Match Score</span>
-                  <span style={{ color: "var(--primary)" }}>85%</span>
+              <div className="landing-mockup-score">
+                <div className="landing-mockup-score-row">
+                  <span>Match Score</span>
+                  <span className="landing-mockup-score-value">85%</span>
                 </div>
-                <div
-                  style={{
-                    height: "10px",
-                    background: "var(--bg)",
-                    borderRadius: "999px",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Gradient uses Primary and Accent colors */}
+                <div className="landing-mockup-bar">
                   <div
-                    style={{
-                      width: "85%",
-                      height: "100%",
-                      background:
-                        "linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%)",
-                      borderRadius: "999px",
-                    }}
-                  ></div>
+                    className="landing-mockup-bar-fill"
+                    style={{ width: "85%" }}
+                  />
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div className="landing-mockup-tags">
                 <span className="badge badge-submitted">React</span>
                 <span className="badge badge-submitted">TypeScript</span>
                 <span className="badge badge-submitted">CSS</span>
@@ -317,78 +113,24 @@ export default function Landing() {
             </div>
 
             {/* Floating Element 1 */}
-            <div
-              style={{
-                position: "absolute",
-                top: "-30px",
-                right: "-20px",
-                background: "#fff",
-                padding: "16px",
-                borderRadius: "16px",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-                border: "1px solid var(--border)",
-                zIndex: 3,
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-              }}
-            >
-              <div
-                style={{
-                  background: "var(--success-soft)",
-                  padding: "8px",
-                  borderRadius: "50%",
-                }}
-              >
-                <CheckCircle size={20} style={{ color: "var(--success)" }} />
+            <div className="landing-float landing-float-top">
+              <div className="landing-float-icon landing-float-icon-success">
+                <CheckCircle size={20} />
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
-                  Shortlisted
-                </p>
-                <p
-                  style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}
-                >
-                  Just now
-                </p>
+                <p className="landing-float-title">Shortlisted</p>
+                <p className="landing-float-sub">Just now</p>
               </div>
             </div>
 
             {/* Floating Element 2 */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: "-30px",
-                left: "-40px",
-                background: "#fff",
-                padding: "16px",
-                borderRadius: "16px",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-                border: "1px solid var(--border)",
-                zIndex: 3,
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-              }}
-            >
-              <div
-                style={{
-                  background: "var(--warning-soft)",
-                  padding: "8px",
-                  borderRadius: "50%",
-                }}
-              >
-                <Zap size={20} style={{ color: "var(--warning)" }} />
+            <div className="landing-float landing-float-bottom">
+              <div className="landing-float-icon landing-float-icon-warning">
+                <Zap size={20} />
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
-                  Screening Complete
-                </p>
-                <p
-                  style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}
-                >
-                  12 applicants ranked
-                </p>
+                <p className="landing-float-title">Screening Complete</p>
+                <p className="landing-float-sub">12 applicants ranked</p>
               </div>
             </div>
           </div>
@@ -396,191 +138,44 @@ export default function Landing() {
       </div>
 
       {/* FEATURES */}
-      <div
-        style={{
-          padding: "100px 48px",
-          background: "var(--bg)",
-          borderTop: "1px solid var(--border)",
-        }}
-      >
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: "64px",
-            maxWidth: "600px",
-            margin: "0 auto",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "36px",
-              marginBottom: "16px",
-              fontWeight: "800",
-              letterSpacing: "-0.5px",
-            }}
-          >
-            Why Choose TalentScreen?
-          </h2>
-          <p style={{ color: "var(--muted)", fontSize: "18px" }}>
-            {/* Built specifically for the AAUA community to streamline recruitment
-            and internship placements. */}
+      <div className="landing-features">
+        <div className="landing-features-head">
+          <h2 className="landing-features-title">Why Choose TalentScreen?</h2>
+          <p className="landing-features-sub">
+            Built specifically for the AAUA community to streamline recruitment
+            and internship placements.
           </p>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "32px",
-            maxWidth: "1100px",
-            margin: "0 auto",
-          }}
-        >
-          <div
-            className="card"
-            style={{
-              padding: "40px",
-              transition: "transform 0.2s",
-              cursor: "default",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "translateY(-5px)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
-          >
-            <div
-              style={{
-                background: "var(--primary-soft)",
-                width: "64px",
-                height: "64px",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "24px",
-                color: "var(--primary)",
-              }}
-            >
+        <div className="landing-features-grid">
+          <div className="card landing-feature-card">
+            <div className="landing-feature-icon">
               <Zap size={32} />
             </div>
-            <h3
-              style={{
-                fontSize: "20px",
-                marginBottom: "12px",
-                fontWeight: "700",
-              }}
-            >
-              Automated Screening
-            </h3>
-            <p
-              style={{
-                color: "var(--muted)",
-                fontSize: "15px",
-                lineHeight: "1.6",
-              }}
-            >
+            <h3 className="landing-feature-title">Automated Screening</h3>
+            <p className="landing-feature-text">
               Our rule-based engine ranks applicants objectively based on
               skills, experience, and qualifications.
             </p>
           </div>
 
-          <div
-            className="card"
-            style={{
-              padding: "40px",
-              transition: "transform 0.2s",
-              cursor: "default",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "translateY(-5px)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
-          >
-            <div
-              style={{
-                background: "var(--primary-soft)",
-                width: "64px",
-                height: "64px",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "24px",
-                color: "var(--primary)",
-              }}
-            >
+          <div className="card landing-feature-card">
+            <div className="landing-feature-icon">
               <Shield size={32} />
             </div>
-            <h3
-              style={{
-                fontSize: "20px",
-                marginBottom: "12px",
-                fontWeight: "700",
-              }}
-            >
-              Secure Tracking
-            </h3>
-            <p
-              style={{
-                color: "var(--muted)",
-                fontSize: "15px",
-                lineHeight: "1.6",
-              }}
-            >
+            <h3 className="landing-feature-title">Secure Tracking</h3>
+            <p className="landing-feature-text">
               Applicants can track their application status in real-time with
               full transparency.
             </p>
           </div>
 
-          <div
-            className="card"
-            style={{
-              padding: "40px",
-              transition: "transform 0.2s",
-              cursor: "default",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "translateY(-5px)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
-          >
-            <div
-              style={{
-                background: "var(--primary-soft)",
-                width: "64px",
-                height: "64px",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "24px",
-                color: "var(--primary)",
-              }}
-            >
+          <div className="card landing-feature-card">
+            <div className="landing-feature-icon">
               <GraduationCap size={32} />
             </div>
-            <h3
-              style={{
-                fontSize: "20px",
-                marginBottom: "12px",
-                fontWeight: "700",
-              }}
-            >
-              Internship Portal
-            </h3>
-            <p
-              style={{
-                color: "var(--muted)",
-                fontSize: "15px",
-                lineHeight: "1.6",
-              }}
-            >
+            <h3 className="landing-feature-title">Internship Portal</h3>
+            <p className="landing-feature-text">
               A dedicated portal for SIWES and graduate internships, separate
               from the main job board.
             </p>
@@ -589,18 +184,8 @@ export default function Landing() {
       </div>
 
       {/* FOOTER */}
-      <div
-        style={{
-          padding: "32px",
-          textAlign: "center",
-          background: "var(--surface)",
-          borderTop: "1px solid var(--border)",
-          color: "var(--muted)",
-          fontSize: "14px",
-        }}
-      >
-        {/* © 2026 TalentScreen. A Final Year Project for Adekunle Ajasin
-        University, Akungba-Akoko. */}
+      <div className="landing-footer">
+        © 2026 TalentScreen.
       </div>
     </div>
   );

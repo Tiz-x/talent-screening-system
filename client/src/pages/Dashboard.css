@@ -1,0 +1,75 @@
+/* =========================================
+   DASHBOARD PAGE
+   ========================================= */
+
+/* Chart card — prevent overflow, allow children to shrink */
+.dash-chart-card {
+  margin-bottom: 24px;
+  overflow: hidden !important; /* Forces the massive pie chart to stay inside the card */
+  min-width: 0;
+  width: 100%;
+}
+
+/* Chart wrapper — force strict dimensions */
+.dash-chart-wrap {
+  width: 100%;
+  height: 300px;
+  position: relative; /* Helps Recharts calculate size correctly */
+  overflow: hidden; /* Safety net */
+}
+
+/* THE SILVER BULLET FOR RECHARTS */
+/* This forces the responsive container to strictly obey the parent width */
+.recharts-responsive-container {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Empty state */
+.dash-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+}
+
+/* Recharts legend styling override (slightly smaller, wraps gracefully) */
+.dash-chart-card .recharts-legend-item {
+  font-size: 12px !important;
+}
+
+.dash-chart-card .recharts-default-legend {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 4px 12px;
+  padding: 0 8px !important;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+@media (max-width: 768px) {
+  .dash-chart-wrap {
+    height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-chart-wrap {
+    height: 260px;
+  }
+
+  /* Shrink chart text on very small phones */
+  .dash-chart-card .recharts-cartesian-axis-tick-value {
+    font-size: 10px !important;
+  }
+
+  .dash-chart-card .recharts-legend-item {
+    font-size: 11px !important;
+  }
+}

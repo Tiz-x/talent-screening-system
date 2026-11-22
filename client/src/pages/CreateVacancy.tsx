@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
+import CustomSelect from '../components/CustomSelect';
+import './CreateVacancy.css';
 
 export default function CreateVacancy() {
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ export default function CreateVacancy() {
   const [description, setDescription] = useState('');
   const [minQualification, setMinQualification] = useState('BSC');
   const [requiredYears, setRequiredYears] = useState(1);
-  const [requiredSkills ] = useState<string[]>(['React', 'TypeScript']);
+  const [requiredSkills] = useState<string[]>(['React', 'TypeScript']);
   
   const [weights, setWeights] = useState({
     qual: 25, skills: 40, exp: 25, certs: 10
@@ -29,7 +31,6 @@ export default function CreateVacancy() {
   const totalWeight = weights.qual + weights.skills + weights.exp + weights.certs;
   const isWeightValid = totalWeight === 100;
 
-  // FORM VALIDATION: Check if all mandatory fields are filled
   const isFormValid = 
     title.trim() !== '' && 
     companyName.trim() !== '' && 
@@ -66,7 +67,6 @@ export default function CreateVacancy() {
     }
   };
 
-  // Helper to show red borders on empty fields
   const getInputStyle = (value: string) => ({
     borderColor: showErrors && value.trim() === '' ? 'var(--danger)' : 'var(--border)',
     background: showErrors && value.trim() === '' ? 'var(--danger-soft)' : '#fff'
@@ -74,17 +74,17 @@ export default function CreateVacancy() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header cv-header">
         <div>
           <button 
             onClick={() => navigate('/vacancies')}
-            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', padding: 0 }}
+            className="cv-back-btn"
           >
             <ArrowLeft size={16} /> Back to Vacancies
           </button>
           <h1>Create New Vacancy</h1>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+        <div className="cv-action-wrap">
           <button 
             className="btn" 
             disabled={isLoading} 
@@ -94,7 +94,7 @@ export default function CreateVacancy() {
             <Save size={16} /> {isLoading ? 'Publishing...' : 'Publish Vacancy'}
           </button>
           {!isFormValid && showErrors && (
-            <span style={{ fontSize: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span className="cv-error-msg">
               <AlertCircle size={14} /> Please fill all required fields
             </span>
           )}
@@ -102,53 +102,66 @@ export default function CreateVacancy() {
       </div>
 
       {message && (
-        <div style={{ padding: '12px', background: message.includes('success') ? 'var(--success-soft)' : 'var(--danger-soft)', color: message.includes('success') ? 'var(--success)' : 'var(--danger)', borderRadius: '6px', marginBottom: '24px' }}>
+        <div className="cv-message" style={{ 
+          background: message.includes('success') ? 'var(--success-soft)' : 'var(--danger-soft)', 
+          color: message.includes('success') ? 'var(--success)' : 'var(--danger)' 
+        }}>
           {message}
         </div>
       )}
 
-      <div className="split" style={{ gridTemplateColumns: '1fr 400px' }}>
+      {/* Replaced inline grid with className */}
+      <div className="split cv-split">
         
         {/* LEFT: Basic Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="cv-col">
           <div className="card">
             <h2>Job Details</h2>
-            <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '24px' }}>Basic information about the role.</p>
+            <p className="cv-subtext">Basic information about the role.</p>
             
             <div className="field">
-              <label>Job Title <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <label>Job Title <span className="cv-required">*</span></label>
               <input type="text" className="input" placeholder="e.g. Frontend Developer Intern" value={title} onChange={e => setTitle(e.target.value)} style={getInputStyle(title)} />
             </div>
 
             <div className="field">
-              <label>Company Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <label>Company Name <span className="cv-required">*</span></label>
               <input type="text" className="input" placeholder="e.g. TechNova Solutions" value={companyName} onChange={e => setCompanyName(e.target.value)} style={getInputStyle(companyName)} />
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {/* Replaced inline grid with className */}
+            <div className="cv-grid-2">
               <div className="field">
-                <label>Location <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label>Location <span className="cv-required">*</span></label>
                 <input type="text" className="input" placeholder="e.g. Akungba, Ondo" value={location} onChange={e => setLocation(e.target.value)} style={getInputStyle(location)} />
               </div>
               <div className="field">
                 <label>Work Mode</label>
-                <select className="select" value={workMode} onChange={e => setWorkMode(e.target.value)}>
-                  <option value="Onsite">Onsite</option>
-                  <option value="Remote">Remote</option>
-                  <option value="Hybrid">Hybrid</option>
-                </select>
+                <CustomSelect 
+  value={workMode}
+  onChange={setWorkMode}
+  options={[
+    { value: 'Onsite', label: 'Onsite' },
+    { value: 'Remote', label: 'Remote' },
+    { value: 'Hybrid', label: 'Hybrid' }
+  ]}
+/>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="cv-grid-2">
               <div className="field">
                 <label>Job Type</label>
-                <select className="select" value={type} onChange={e => setType(e.target.value)}>
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Internship">Internship</option>
-                  <option value="Contract">Contract</option>
-                </select>
+                <CustomSelect 
+  value={type}
+  onChange={setType}
+  options={[
+    { value: 'Full-time', label: 'Full-time' },
+    { value: 'Part-time', label: 'Part-time' },
+    { value: 'Internship', label: 'Internship' },
+    { value: 'Contract', label: 'Contract' }
+  ]}
+/>
               </div>
               <div className="field">
                 <label>Salary Range (Optional)</label>
@@ -157,31 +170,34 @@ export default function CreateVacancy() {
             </div>
 
             <div className="field">
-              <label>Application Deadline <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <label>Application Deadline <span className="cv-required">*</span></label>
               <input type="date" className="input" value={deadline} onChange={e => setDeadline(e.target.value)} style={getInputStyle(deadline)} />
             </div>
 
             <div className="field">
-              <label>Job Description <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <label>Job Description <span className="cv-required">*</span></label>
               <textarea className="textarea" rows={5} placeholder="Describe the role and responsibilities..." value={description} onChange={e => setDescription(e.target.value)} style={getInputStyle(description)}></textarea>
             </div>
           </div>
         </div>
 
         {/* RIGHT: Criteria & Weights */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
+        <div className="cv-col">
           <div className="card">
             <h2>Knockout & Requirements</h2>
             
             <div className="field">
               <label>Minimum Qualification</label>
-              <select className="select" value={minQualification} onChange={e => setMinQualification(e.target.value)}>
-                <option value="OND">OND</option>
-                <option value="HND">HND</option>
-                <option value="BSC">BSc</option>
-                <option value="MSC">MSc</option>
-              </select>
+              <CustomSelect 
+  value={minQualification}
+  onChange={setMinQualification}
+  options={[
+    { value: 'OND', label: 'OND' },
+    { value: 'HND', label: 'HND' },
+    { value: 'BSC', label: 'BSc' },
+    { value: 'MSC', label: 'MSc' }
+  ]}
+/>
             </div>
             
             <div className="field">
@@ -192,9 +208,9 @@ export default function CreateVacancy() {
 
           <div className="card">
             <h2>Screening Weights</h2>
-            <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '16px' }}>Must total exactly 100%.</p>
+            <p className="cv-subtext">Must total exactly 100%.</p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="cv-grid-2">
               <div className="field">
                 <label>Qualification (%)</label>
                 <input type="number" className="input" value={weights.qual} onChange={e => handleWeightChange('qual', e.target.value)} />
@@ -213,18 +229,17 @@ export default function CreateVacancy() {
               </div>
             </div>
 
-            <div style={{ 
-              marginTop: '16px', padding: '12px', borderRadius: '6px',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: isWeightValid ? 'var(--success-soft)' : 'var(--danger-soft)',
-              color: isWeightValid ? 'var(--success)' : 'var(--danger)',
-              fontWeight: '600'
-            }}>
+            <div 
+              className="cv-weight-total"
+              style={{ 
+                background: isWeightValid ? 'var(--success-soft)' : 'var(--danger-soft)',
+                color: isWeightValid ? 'var(--success)' : 'var(--danger)',
+              }}
+            >
               <span>Total Weight:</span>
               <span>{totalWeight}%</span>
             </div>
           </div>
-
         </div>
       </div>
     </div>

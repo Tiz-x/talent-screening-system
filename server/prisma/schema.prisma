@@ -42,6 +42,7 @@ model ApplicantProfile {
   skills        String[] 
   experienceYrs Int    @default(0)
   cvUrl         String?
+  additionalInfo Json?
 }
 
 model EmployerProfile {

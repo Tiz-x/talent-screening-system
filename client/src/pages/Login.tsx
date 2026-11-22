@@ -32,6 +32,39 @@ export default function Login() {
 
   return (
     <div className="auth-container">
+            {/* ADD THIS STYLE TAG RIGHT HERE */}
+      <style>{`
+        @media (max-width: 900px) {
+          .auth-left { display: none !important; }
+          .auth-right { 
+            padding: 24px 16px !important; 
+            align-items: flex-start !important;
+          }
+          .auth-form-wrapper {
+            /* Make it fill the space beautifully */
+            max-width: 480px !important; 
+            margin: 0 auto !important;
+            padding: 32px 20px !important;
+            width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+          }
+          /* Slightly larger inputs and buttons for mobile ease-of-use */
+          .auth-form-wrapper .input,
+          .auth-form-wrapper .select {
+            font-size: 16px !important; /* Prevents iOS zoom on focus */
+            padding: 12px 14px !important;
+          }
+          .auth-form-wrapper .btn {
+            padding: 14px !important;
+            font-size: 16px !important;
+          }
+          .auth-form-wrapper h2 {
+            font-size: 28px !important;
+          }
+        }
+      `}</style>
       {/* LEFT SIDE */}
       <div className="auth-left">
         <div className="auth-left-content">

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { api } from '../api/api';
 import { Link } from 'react-router-dom';
 import { type Role } from '../api/mockData';
-import { Building2, UserCheck, Shield, Eye, EyeOff } from 'lucide-react'; // <-- Import Eye icons
+import { Building2, UserCheck, Shield, Eye, EyeOff } from 'lucide-react'; 
+import CustomSelect from '../components/CustomSelect';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -46,6 +47,39 @@ export default function Register() {
 
   return (
     <div className="auth-container">
+            {/* ADD THIS STYLE TAG RIGHT HERE */}
+      <style>{`
+        @media (max-width: 900px) {
+          .auth-left { display: none !important; }
+          .auth-right { 
+            padding: 24px 16px !important; 
+            align-items: flex-start !important;
+          }
+          .auth-form-wrapper {
+            /* Make it fill the space beautifully */
+            max-width: 480px !important; 
+            margin: 0 auto !important;
+            padding: 32px 20px !important;
+            width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+          }
+          /* Slightly larger inputs and buttons for mobile ease-of-use */
+          .auth-form-wrapper .input,
+          .auth-form-wrapper .select {
+            font-size: 16px !important; /* Prevents iOS zoom on focus */
+            padding: 12px 14px !important;
+          }
+          .auth-form-wrapper .btn {
+            padding: 14px !important;
+            font-size: 16px !important;
+          }
+          .auth-form-wrapper h2 {
+            font-size: 28px !important;
+          }
+        }
+      `}</style>
       {/* LEFT SIDE */}
       <div className="auth-left">
         <div className="auth-left-content">
@@ -133,15 +167,14 @@ export default function Register() {
 
             <div className="field" style={{ background: 'var(--bg)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
               <label style={{ marginBottom: '8px' }}>I am registering as:</label>
-              <select 
-                className="select" 
-                value={role} 
-                onChange={(e) => setRole(e.target.value as Role)}
-                style={{ borderColor: 'var(--border)' }}
-              >
-                <option value="APPLICANT">Applicant (Student / Graduate)</option>
-                <option value="EMPLOYER">Employer (Recruiter / Company)</option>
-              </select>
+              <CustomSelect 
+  value={role}
+  onChange={(val) => setRole(val as Role)}
+  options={[
+    { value: 'APPLICANT', label: 'Applicant (Student / Graduate)' },
+    { value: 'EMPLOYER', label: 'Employer (Recruiter / Company)' }
+  ]}
+/>
             </div>
             
             <button 

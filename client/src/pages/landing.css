@@ -1,0 +1,467 @@
+/* =========================================
+   LANDING PAGE
+   Depends on global tokens & .btn / .card / .badge from global.css
+   ========================================= */
+
+.landing-root {
+  min-height: 100vh;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  overflow-x: hidden; /* kills any horizontal scroll from floats */
+}
+
+/* ---------- Navbar ---------- */
+.landing-nav {
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.landing-brand {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0; /* Prevents brand from squishing */
+}
+
+/* ... (keep the brand-icon as is) ... */
+
+.landing-nav-actions {
+  display: flex;
+  gap: 12px; /* Slightly reduced from 16px */
+  align-items: center;
+  flex-shrink: 0; /* Prevents actions from wrapping */
+}
+
+.landing-signin {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+  font-family: inherit;
+  padding: 8px 4px;
+  white-space: nowrap; /* FIX: Stops "Sign In" from wrapping */
+}
+
+.landing-signin:hover { color: var(--primary); }
+
+.landing-cta {
+  padding: 10px 20px;
+  border-radius: 8px;
+  white-space: nowrap; /* FIX: Stops "Get Started" from wrapping */
+}
+
+/* ---------- Hero ---------- */
+.landing-hero {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 24px;
+  background:
+    radial-gradient(circle at 10% 20%, var(--primary-soft) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, #ccfbf1 0%, transparent 40%);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.landing-hero-inner {
+  max-width: 1100px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 32px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.landing-badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+}
+
+.landing-heading {
+  font-size: 56px;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  color: var(--text);
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.landing-heading-gradient {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.landing-subheading {
+  font-size: 18px;
+  color: var(--muted);
+  margin-bottom: 40px;
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+.landing-hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.landing-hero-cta {
+  padding: 16px 32px;
+  font-size: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.3);
+}
+
+.landing-hero-cta-secondary {
+  padding: 16px 32px;
+  font-size: 16px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* ---------- Mockup card ---------- */
+.landing-mockup-wrap {
+  position: relative;
+  perspective: 1000px;
+}
+
+.landing-mockup-card {
+  background: #fff;
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  border: 1px solid var(--border);
+  position: relative;
+  z-index: 2;
+  transform: rotateY(-5deg) rotateX(5deg);
+}
+
+.landing-mockup-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.landing-mockup-icon {
+  background: var(--primary-soft);
+  padding: 16px;
+  border-radius: 16px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.landing-mockup-title {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.landing-mockup-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.landing-mockup-score { margin-bottom: 24px; }
+
+.landing-mockup-score-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+.landing-mockup-score-value { color: var(--primary); }
+
+.landing-mockup-bar {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.landing-mockup-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  border-radius: 999px;
+}
+
+.landing-mockup-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Floating cards ---------- */
+.landing-float {
+  position: absolute;
+  background: #fff;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.landing-float-top {
+  top: -30px;
+  right: -20px;
+}
+
+.landing-float-bottom {
+  bottom: -30px;
+  left: -40px;
+}
+
+.landing-float-icon {
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.landing-float-icon-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.landing-float-icon-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.landing-float-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.landing-float-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Features ---------- */
+.landing-features {
+  padding: 100px 48px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+.landing-features-head {
+  text-align: center;
+  margin-bottom: 64px;
+  max-width: 600px;
+  margin-inline: auto;
+}
+
+.landing-features-title {
+  font-size: 36px;
+  margin-bottom: 16px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.landing-features-sub {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.landing-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  max-width: 1100px;
+  margin-inline: auto;
+}
+
+.landing-feature-card {
+  padding: 40px;
+  transition: transform 0.2s ease;
+  cursor: default;
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.landing-feature-icon {
+  background: var(--primary-soft);
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: var(--primary);
+}
+
+.landing-feature-title {
+  font-size: 20px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.landing-feature-text {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ---------- Footer ---------- */
+.landing-footer {
+  padding: 32px;
+  text-align: center;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .landing-nav { padding: 16px 24px; }
+  .landing-hero { padding: 72px 24px; }
+  .landing-hero-inner { gap: 40px; }
+  .landing-heading { font-size: 44px; }
+  .landing-features { padding: 72px 24px; }
+  .landing-features-grid { gap: 24px; }
+  .landing-feature-card { padding: 28px; }
+}
+
+/* Small tablet — start collapsing the hero */
+@media (max-width: 900px) {
+  .landing-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 56px;
+    text-align: center;
+  }
+  .landing-subheading { margin-inline: auto; }
+  .landing-hero-actions { justify-content: center; }
+  .landing-badge { font-size: 12px; }
+
+  .landing-mockup-card {
+    transform: none;
+    max-width: 480px;
+    margin-inline: auto;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .landing-nav { padding: 12px 16px; gap: 8px; }
+  .landing-brand { font-size: 18px; gap: 6px; }
+  .landing-brand-icon { padding: 4px; }
+  .landing-nav-actions { gap: 8px; }
+  .landing-signin { font-size: 13px; padding: 8px 12px;  }
+  .landing-cta { padding: 8px 14px; font-size: 13px; }
+
+  .landing-hero { padding: 48px 16px; }
+  .landing-heading { font-size: 32px; letter-spacing: -0.5px; }
+  .landing-subheading { font-size: 15px; margin-bottom: 32px; }
+
+  .landing-hero-actions { flex-direction: column; align-items: stretch; }
+  .landing-hero-cta,
+  .landing-hero-cta-secondary {
+    padding: 14px 24px;
+    font-size: 15px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* Scale mockup down and hide floats (they overflow otherwise) */
+  .landing-mockup-wrap { margin-top: 8px; }
+  .landing-mockup-card { padding: 24px; border-radius: 20px; }
+  .landing-mockup-title { font-size: 17px; }
+  .landing-float { display: none; }
+
+  .landing-features { padding: 48px 16px; }
+  .landing-features-head { margin-bottom: 40px; }
+  .landing-features-title { font-size: 26px; }
+  .landing-features-sub { font-size: 15px; }
+
+  .landing-features-grid { grid-template-columns: 1fr; gap: 16px; }
+  .landing-feature-card { padding: 24px; }
+  .landing-feature-icon { width: 52px; height: 52px; margin-bottom: 16px; }
+  .landing-feature-title { font-size: 18px; }
+
+  .landing-footer { padding: 24px 16px; font-size: 13px; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .landing-feature-card { transition: none; }
+  .landing-feature-card:hover { transform: none; }
+}

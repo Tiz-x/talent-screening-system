@@ -1,0 +1,591 @@
+/* =========================================
+   VACANCIES PAGE (Applicant)
+   ========================================= */
+
+/* ---------- Layout ---------- */
+.vac-layout {
+  display: grid;
+  grid-template-columns: 1fr 450px;
+  gap: 24px;
+  align-items: start;
+}
+
+.vac-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* ---------- Filter bar ---------- */
+.vac-filter-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vac-search-wrap { position: relative; }
+
+.vac-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.vac-search-input {
+  padding-left: 48px !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  font-size: 15px !important;
+  background: var(--bg) !important;
+}
+
+.vac-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vac-filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vac-filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-top: 6px;
+}
+
+.vac-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vac-pill {
+  padding: 6px 16px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.vac-pill:hover { border-color: var(--primary); }
+
+.vac-pill.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* ---------- Job card ---------- */
+.vac-job-card {
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.vac-job-card.selected {
+  border-left: 4px solid var(--primary);
+}
+
+.vac-job-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.vac-job-main { min-width: 0; flex: 1; }
+
+.vac-job-title {
+  color: var(--text);
+  font-size: 18px;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.vac-job-company {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vac-job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vac-job-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vac-job-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.vac-deadline-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ---------- Detail panel ---------- */
+.vac-detail {
+  position: sticky;
+  top: 24px;
+  padding: 32px;
+  min-width: 0;
+}
+
+.vac-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.vac-detail-title {
+  font-size: 24px;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.vac-detail-company {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vac-detail-location {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vac-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  margin-bottom: 24px;
+}
+
+.vac-detail-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.vac-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.vac-skill-pill {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.vac-apply-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 14px;
+  font-size: 16px;
+}
+
+.vac-detail-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---------- Modal ---------- */
+.vac-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.vac-modal {
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: vacFadeIn 0.2s ease-out;
+}
+
+@keyframes vacFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.vac-modal-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.vac-modal-header h2 {
+  font-size: 22px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.vac-modal-header p {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.vac-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.vac-modal-close:hover { background: var(--border); }
+
+.vac-modal-body {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.vac-modal-hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+.vac-modal-section-title {
+  font-size: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+}
+
+.vac-modal-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Additional Info block inside modal */
+.vac-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.vac-modal-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  min-width: 0;
+}
+
+.vac-modal-info-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.vac-modal-info-value {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* CV uploaded card */
+.vac-modal-cv {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.vac-modal-cv-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+.vac-modal-cv-icon {
+  background: #fee2e2;
+  padding: 12px;
+  border-radius: 8px;
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.vac-modal-cv-name {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.vac-modal-cv-status {
+  font-size: 13px;
+  color: var(--success);
+  margin: 4px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vac-modal-cv-replace {
+  font-size: 13px;
+  padding: 8px 16px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+/* Dropzone */
+.vac-modal-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 32px 16px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.vac-modal-dropzone:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.vac-modal-dropzone-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.vac-modal-dropzone-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.vac-modal-footer {
+  padding: 20px 32px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+/* Tablet: stack list + detail */
+@media (max-width: 1024px) {
+  .vac-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Un-sticky on mobile — no fixed detail panel */
+  .vac-detail {
+    position: static;
+    top: auto;
+    padding: 24px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .vac-filter-card { padding: 16px; }
+
+  .vac-job-badges {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* Modal → bottom sheet */
+  .vac-modal-overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+
+  .vac-modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .vac-modal-header { padding: 20px 16px; }
+  .vac-modal-header h2 { font-size: 18px; }
+  .vac-modal-body   { padding: 20px 16px; gap: 20px; }
+  .vac-modal-footer {
+    padding: 12px 16px;
+    flex-direction: column-reverse;
+  }
+  .vac-modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .vac-modal-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .vac-detail-grid {
+    grid-template-columns: 1fr 1fr; /* keep 2 cols on mobile — fits */
+    gap: 12px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .vac-detail {
+    padding: 20px 16px;
+  }
+
+  .vac-detail-title { font-size: 20px; }
+
+  .vac-job-inner {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vac-job-badges {
+    align-items: flex-start;
+  }
+
+  .vac-modal-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .vac-modal-info-value {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .vac-modal-cv {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vac-modal-cv-replace {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .vac-detail-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}

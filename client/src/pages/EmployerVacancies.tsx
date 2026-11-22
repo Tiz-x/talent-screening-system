@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import { useNavigate } from 'react-router-dom';
-import { Users, MapPin, Briefcase, Calendar, CircleDollarSign} from 'lucide-react';
-import Spinner from '../components/Spinner'; 
+import { Users, MapPin, Briefcase, Calendar, CircleDollarSign } from 'lucide-react';
+import Spinner from '../components/Spinner';
+import './EmployerVacancies.css';
 
 interface Vacancy {
   id: string;
@@ -26,7 +27,7 @@ export default function EmployerVacancies() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const data = await api.getVacancies();
+        const data = await api.getVacancies(true);
         setVacancies(data);
       } catch {
         console.error("Failed to load vacancies");
@@ -52,62 +53,54 @@ export default function EmployerVacancies() {
       </div>
 
       {vacancies.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <Briefcase size={48} style={{ color: 'var(--border)', margin: '0 auto 16px auto' }} />
+        <div className="card ev-empty">
+          <Briefcase size={48} className="ev-empty-icon" />
           <h2 style={{ marginBottom: '8px' }}>No vacancies yet</h2>
-          <p style={{ color: 'var(--muted)', marginBottom: '24px' }}>You haven't posted any jobs. Create one to start receiving applications.</p>
-          <button className="btn" onClick={() => navigate('/employer/create-vacancy')}>Create your first vacancy</button>
+          <p style={{ color: 'var(--muted)', marginBottom: '24px' }}>
+            You haven't posted any jobs. Create one to start receiving applications.
+          </p>
+          <button className="btn" onClick={() => navigate('/employer/create-vacancy')}>
+            Create your first vacancy
+          </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="ev-list">
           {vacancies.map((job) => (
-            <div key={job.id} className="card" style={{ display: 'flex', padding: 0, overflow: 'hidden' }}>
-              
+            <div key={job.id} className="card ev-card">
+
               {/* LEFT SIDE: Job Details */}
-              <div style={{ flex: 1, padding: '24px 32px' }}>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <span className="badge" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>{job.type}</span>
-                  <span className="badge" style={{ background: '#e0f2fe', color: '#0284c7' }}>{job.workMode}</span>
+              <div className="ev-card-main">
+                <div className="ev-badges">
+                  <span className="badge ev-badge-type">{job.type}</span>
+                  <span className="badge ev-badge-mode">{job.workMode}</span>
                 </div>
-                
-                <h2 style={{ color: 'var(--text)', marginBottom: '4px', fontSize: '22px', fontWeight: '700' }}>{job.title}</h2>
-                <p style={{ color: 'var(--primary)', fontWeight: '600', fontSize: '14px', marginBottom: '20px' }}>{job.companyName}</p>
-                
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', color: 'var(--muted)', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+                <h2 className="ev-title">{job.title}</h2>
+                <p className="ev-company">{job.companyName}</p>
+
+                <div className="ev-meta">
+                  <span>
                     <MapPin size={16} /> {job.location}
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>
                     <CircleDollarSign size={16} /> {job.salary || 'Not disclosed'}
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>
                     <Calendar size={16} /> Apply by {new Date(job.deadline).toLocaleDateString()}
                   </span>
                 </div>
               </div>
-              
+
               {/* RIGHT SIDE: Stats & Actions */}
-              <div style={{ 
-                background: 'var(--bg)', 
-                padding: '24px 32px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '32px', 
-                borderLeft: '1px solid var(--border)' 
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text)', lineHeight: '1' }}>
-                    {job._count?.applications || 0}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px', fontWeight: '600' }}>
-                    Applicants
-                  </div>
+              <div className="ev-card-side">
+                <div className="ev-stat">
+                  <div className="ev-stat-value">{job._count?.applications || 0}</div>
+                  <div className="ev-stat-label">Applicants</div>
                 </div>
-                
-                <button 
-                  className="btn" 
+
+                <button
+                  className="btn ev-btn"
                   onClick={() => navigate('/employer/ranking')}
-                  style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
                   <Users size={18} /> View & Screen
                 </button>

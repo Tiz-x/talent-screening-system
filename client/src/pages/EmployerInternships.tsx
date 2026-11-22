@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import { Plus, User, X, Save, Calendar, MapPin, Clock, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import './EmployerInternships.css';
 
 interface Internship {
   id: string;
@@ -78,39 +79,36 @@ export default function EmployerInternships() {
           No internships posted yet. Click "Post Internship" to create one.
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))', gap: '20px' }}>
+        <div className="ei-grid">
           {internships.map((internship) => (
-            <div key={internship.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={internship.id} className="card ei-card">
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div>
-                    <h2 style={{ color: 'var(--text)', fontSize: '18px', marginBottom: '4px' }}>{internship.title}</h2>
-                    <p style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)', marginBottom: '6px' }}>
-                      {internship.companyName}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--muted)' }}>
+                <div className="ei-card-head">
+                  <div className="ei-card-head-main">
+                    <h2>{internship.title}</h2>
+                    <p className="ei-company">{internship.companyName}</p>
+                    <div className="ei-location">
                       <MapPin size={14} /> {internship.location}
                     </div>
                   </div>
-                  <span className="badge badge-selected">
-                    <ShieldCheck size={12} style={{ display: 'inline', marginRight: '4px' }}/> Active
+                  <span className="badge badge-selected ei-active-badge">
+                    <ShieldCheck size={12} /> Active
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--muted)', padding: '12px', background: 'var(--bg)', borderRadius: '6px', marginBottom: '16px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="ei-meta">
+                  <span>
                     <Clock size={14} /> {internship.duration}
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>
                     <Calendar size={14} /> {new Date(internship.deadline).toLocaleDateString()}
                   </span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+              <div className="ei-card-footer">
                 <button 
                   className="btn btn-outline" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                   onClick={() => navigate(`/internships/${internship.id}/applicants`)}
                 >
                   <User size={16} /> Review Applicants
@@ -124,65 +122,70 @@ export default function EmployerInternships() {
       {/* POST INTERNSHIP MODAL */}
       {isModalOpen && (
         <div 
-          onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }} // Close on click outside
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto' }}
+          className="ei-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
         >
-          <div className="card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card ei-modal">
             
             {/* Modal Header */}
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg)', flexShrink: 0 }}>
+            <div className="ei-modal-header">
               <div>
-                <h2 style={{ fontSize: '20px', margin: 0 }}>Post New Internship</h2>
-                <p style={{ color: 'var(--muted)', fontSize: '13px', margin: 0 }}>Fill in the details for the internship listing.</p>
+                <h2>Post New Internship</h2>
+                <p>Fill in the details for the internship listing.</p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
+              <button 
+                type="button"
+                className="ei-modal-close" 
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+              >
                 <X size={20} />
               </button>
             </div>
 
             {/* Modal Body (Scrollable) */}
-            <form onSubmit={handlePostInternship} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-              <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
+            <form onSubmit={handlePostInternship} className="ei-modal-form">
+              <div className="ei-modal-body">
                 {error && (
-                  <div style={{ padding: '12px', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: '6px', fontSize: '13px' }}>
+                  <div className="ei-modal-error">
                     {error}
                   </div>
                 )}
 
                 <div className="field">
-                  <label>Internship Title <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label>Internship Title <span className="ei-required">*</span></label>
                   <input type="text" className="input" placeholder="e.g. Software Engineering Intern" value={title} onChange={e => setTitle(e.target.value)} required />
                 </div>
 
                 <div className="field">
-                  <label>Company Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label>Company Name <span className="ei-required">*</span></label>
                   <input type="text" className="input" placeholder="e.g. TechNova Solutions" value={companyName} onChange={e => setCompanyName(e.target.value)} required />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="ei-grid-2">
                   <div className="field">
-                    <label>Location <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Location <span className="ei-required">*</span></label>
                     <input type="text" className="input" placeholder="e.g. Remote" value={location} onChange={e => setLocation(e.target.value)} required />
                   </div>
                   <div className="field">
-                    <label>Duration <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Duration <span className="ei-required">*</span></label>
                     <input type="text" className="input" placeholder="e.g. 6 Months" value={duration} onChange={e => setDuration(e.target.value)} required />
                   </div>
                 </div>
 
                 <div className="field">
-                  <label>Application Deadline <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label>Application Deadline <span className="ei-required">*</span></label>
                   <input type="date" className="input" value={deadline} onChange={e => setDeadline(e.target.value)} required />
                 </div>
 
                 <div className="field">
-                  <label>Description <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label>Description <span className="ei-required">*</span></label>
                   <textarea className="textarea" rows={4} placeholder="Describe the internship role..." value={description} onChange={e => setDescription(e.target.value)} required></textarea>
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--bg)', display: 'flex', justifyContent: 'flex-end', gap: '12px', flexShrink: 0 }}>
+              <div className="ei-modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn" disabled={isSubmitting}>
                   <Save size={16} /> {isSubmitting ? 'Posting...' : 'Post Internship'}

@@ -1,0 +1,197 @@
+/* =========================================
+   EMPLOYER VACANCIES PAGE
+   ========================================= */
+
+/* ---------- Empty state ---------- */
+.ev-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.ev-empty-icon {
+  color: var(--border);
+  margin: 0 auto 16px;
+}
+
+/* ---------- List ---------- */
+.ev-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- Card ---------- */
+.ev-card {
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Left: job details */
+.ev-card-main {
+  flex: 1;
+  padding: 24px 32px;
+  min-width: 0; /* critical: allows text to shrink/wrap */
+}
+
+.ev-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.ev-badge-type {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.ev-badge-mode {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.ev-title {
+  color: var(--text);
+  margin-bottom: 4px;
+  font-size: 22px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ev-company {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 20px;
+  overflow-wrap: anywhere;
+}
+
+.ev-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ev-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Right: stats + action */
+.ev-card-side {
+  background: var(--bg);
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  border-left: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ev-stat {
+  text-align: center;
+}
+
+.ev-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.ev-stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.ev-btn {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+/* Tablet: side section still horizontal but tighter */
+@media (max-width: 1024px) {
+  .ev-card-main { padding: 20px 24px; }
+  .ev-card-side { padding: 20px 24px; gap: 20px; }
+  .ev-title { font-size: 20px; }
+  .ev-stat-value { font-size: 24px; }
+}
+
+/* Mobile: STACK the card vertically */
+@media (max-width: 768px) {
+  .ev-card {
+    flex-direction: column;
+  }
+
+  .ev-card-main {
+    padding: 20px 20px 16px;
+  }
+
+  .ev-card-side {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .ev-stat { text-align: left; }
+
+  .ev-stat-value { font-size: 22px; }
+
+  /* Page header button full-width on mobile */
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  .ev-empty {
+    padding: 48px 16px;
+  }
+}
+
+/* Small phones: button stacks below the count */
+@media (max-width: 480px) {
+  .ev-card-side {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ev-stat { text-align: center; }
+
+  .ev-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .ev-title { font-size: 18px; }
+  .ev-company { font-size: 13px; margin-bottom: 16px; }
+  .ev-meta { gap: 8px 16px; font-size: 12px; }
+
+  .ev-badges { margin-bottom: 10px; }
+  .ev-badge-type,
+  .ev-badge-mode {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api/api";
-import Spinner from '../components/Spinner';
+import { useToast } from '../components/Toast';
+import CustomSelect from '../components/CustomSelect';
 import {
   MapPin,
   Briefcase,
@@ -13,7 +14,9 @@ import {
   FileText,
   Banknote,
   UploadCloud,
+  Filter,
 } from "lucide-react";
+import './Vacancies.css';
 
 interface Vacancy {
   id: string;
@@ -34,21 +37,24 @@ interface Profile {
   skills: string[];
   experienceYrs: number;
   cvUrl: string | null;
+  additionalInfo?: { label: string; value: string }[];
 }
 
 export default function Vacancies() {
+  const { showToast } = useToast();
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
+
+  const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [message, setMessage] = useState("");
   const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
 
-  // Editable Modal States
   const [modalQual, setModalQual] = useState("BSC");
   const [modalExp, setModalExp] = useState(1);
   const [modalSkills, setModalSkills] = useState("");
@@ -59,20 +65,27 @@ export default function Vacancies() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [jobsData, profileData] = await Promise.all([
+        const [jobsData, profileData, myApps] = await Promise.all([
           api.getVacancies(),
           api.getMyProfile().catch(() => null),
+          api.getMyApplications().catch(() => []),
         ]);
         setVacancies(jobsData);
         if (profileData) setProfile(profileData);
+        const appliedIds = myApps.map((app: any) => app.vacancyId);
+        setAppliedJobs(appliedIds);
       } catch {
         console.error("Failed to load data");
+        showToast("Failed to load vacancies", "error");
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  const uniqueTypes = Array.from(new Set(vacancies.map((v) => v.type)));
+  const uniqueModes = Array.from(new Set(vacancies.map((v) => v.workMode)));
 
   const getDeadlineStatus = (deadlineStr: string) => {
     const deadline = new Date(deadlineStr);
@@ -85,49 +98,23 @@ export default function Vacancies() {
     );
 
     if (diffDays < 0)
-      return {
-        text: "Expired",
-        color: "var(--danger)",
-        bg: "var(--danger-soft)",
-      };
+      return { text: "Expired", color: "var(--danger)", bg: "var(--danger-soft)" };
     if (diffDays === 0)
-      return {
-        text: "Closes Today",
-        color: "var(--danger)",
-        bg: "var(--danger-soft)",
-      };
+      return { text: "Closes Today", color: "var(--danger)", bg: "var(--danger-soft)" };
     if (diffDays === 1)
-      return {
-        text: "Closes Tomorrow",
-        color: "var(--warning)",
-        bg: "var(--warning-soft)",
-      };
-    if (diffDays <= 3)
-      return {
-        text: `${diffDays} days left`,
-        color: "var(--warning)",
-        bg: "var(--warning-soft)",
-      };
-    return {
-      text: `${diffDays} days left`,
-      color: "var(--success)",
-      bg: "var(--success-soft)",
-    };
+      return { text: "Closes Tomorrow", color: "var(--warning)", bg: "var(--warning-soft)" };
+    return { text: `${diffDays} days left`, color: "var(--success)", bg: "var(--success-soft)" };
   };
 
   const handleOpenApplyModal = () => {
-    setMessage("");
     if (!profile) {
-      alert("Please complete your profile before applying.");
+      showToast("Please complete your profile before applying.", "error");
       return;
     }
-
-    // Populate modal states with current profile data
     setModalQual(profile.qualification);
     setModalExp(profile.experienceYrs);
-    setModalSkills(profile.skills.join(", ")); // Convert array to comma-separated string
+    setModalSkills(profile.skills.join(", "));
     setModalCvUrl(profile.cvUrl);
-
     setIsModalOpen(true);
   };
 
@@ -138,8 +125,9 @@ export default function Vacancies() {
     try {
       const data = await api.uploadCV(file);
       setModalCvUrl(data.cvUrl);
+      showToast("CV uploaded successfully!", "success");
     } catch {
-      alert("Failed to upload CV");
+      showToast("Failed to upload CV", "error");
     } finally {
       setIsUploading(false);
     }
@@ -148,42 +136,44 @@ export default function Vacancies() {
   const handleFinalSubmit = async () => {
     if (!selectedJob) return;
     setApplying(true);
-    setMessage("");
 
     try {
-      // 1. Save the edited profile data first
       await api.saveApplicantProfile({
         qualification: modalQual,
         experienceYrs: modalExp,
-        skills: modalSkills
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        skills: modalSkills.split(",").map((s) => s.trim()).filter(Boolean),
         cvUrl: modalCvUrl,
+        additionalInfo: profile?.additionalInfo,
       });
-
-      // 2. Submit the application
       await api.applyForVacancy(selectedJob);
-
       setAppliedJobs([...appliedJobs, selectedJob]);
-      setMessage("Application submitted successfully!");
+      showToast("Application submitted successfully!", "success");
       setTimeout(() => setIsModalOpen(false), 2000);
     } catch (err: unknown) {
-      if (err instanceof Error) setMessage(err.message);
-      else setMessage("Failed to apply");
+      if (err instanceof Error) showToast(err.message, "error");
+      else showToast("Failed to apply", "error");
     } finally {
       setApplying(false);
     }
   };
 
-  const filteredJobs = vacancies.filter(
-    (job) =>
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.requiredSkills.some((skill) =>
-        skill.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-  );
+  const filteredJobs = vacancies.filter((job) => {
+    const deadline = new Date(job.deadline);
+    deadline.setHours(23, 59, 59, 999);
+    if (deadline < new Date()) return false;
+
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch =
+      job.title.toLowerCase().includes(searchLower) ||
+      job.companyName.toLowerCase().includes(searchLower) ||
+      job.requiredSkills.some((skill) => skill.toLowerCase().includes(searchLower));
+
+    if (!matchesSearch) return false;
+    if (selectedType && job.type !== selectedType) return false;
+    if (selectedMode && job.workMode !== selectedMode) return false;
+
+    return true;
+  });
 
   return (
     <div>
@@ -194,147 +184,114 @@ export default function Vacancies() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 450px",
-          gap: "24px",
-          alignItems: "start",
-        }}
-      >
+      <div className="vac-layout">
         {/* LEFT: Job List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ position: "relative" }}>
-            <Search
-              size={20}
-              style={{
-                position: "absolute",
-                left: "16px",
-                top: "14px",
-                color: "var(--muted)",
-              }}
-            />
-            <input
-              type="text"
-              className="input"
-              placeholder="Search by title, company, or skill..."
-              style={{
-                paddingLeft: "48px",
-                paddingTop: "12px",
-                paddingBottom: "12px",
-                fontSize: "15px",
-              }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+        <div className="vac-list">
+
+          {/* UNIFIED FILTER BAR */}
+          <div className="card vac-filter-card">
+
+            {/* Search Input */}
+            <div className="vac-search-wrap">
+              <Search size={20} className="vac-search-icon" />
+              <input
+                type="text"
+                className="input vac-search-input"
+                placeholder="Search by job title, company, or skill..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Filter Pills */}
+            <div className="vac-filters">
+              {/* Type Filter */}
+              <div className="vac-filter-row">
+                <span className="vac-filter-label">
+                  <Filter size={14} /> Type
+                </span>
+                <div className="vac-filter-pills">
+                  <button
+                    onClick={() => setSelectedType(null)}
+                    className={`vac-pill${selectedType === null ? " active" : ""}`}
+                  >
+                    All
+                  </button>
+                  {uniqueTypes.map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedType(type)}
+                      className={`vac-pill${selectedType === type ? " active" : ""}`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mode Filter */}
+              <div className="vac-filter-row">
+                <span className="vac-filter-label">Mode</span>
+                <div className="vac-filter-pills">
+                  <button
+                    onClick={() => setSelectedMode(null)}
+                    className={`vac-pill${selectedMode === null ? " active" : ""}`}
+                  >
+                    All
+                  </button>
+                  {uniqueModes.map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setSelectedMode(mode)}
+                      className={`vac-pill${selectedMode === mode ? " active" : ""}`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* JOB LIST */}
           {isLoading ? (
-            <Spinner />
+            <p>Loading...</p>
           ) : filteredJobs.length === 0 ? (
-            <p>No jobs found.</p>
+            <div className="card" style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}>
+              No jobs found matching your criteria.
+            </div>
           ) : (
             filteredJobs.map((job) => {
               const dl = getDeadlineStatus(job.deadline);
+              const isSelected = selectedJob === job.id;
               return (
                 <div
                   key={job.id}
-                  className={`card ${selectedJob === job.id ? "selected" : ""}`}
-                  onClick={() => {
-                    setSelectedJob(job.id);
-                    setMessage("");
-                  }}
-                  style={{
-                    cursor: "pointer",
-                    borderLeft:
-                      selectedJob === job.id
-                        ? "4px solid var(--primary)"
-                        : "1px solid var(--border)",
-                  }}
+                  className={`card vac-job-card${isSelected ? " selected" : ""}`}
+                  onClick={() => setSelectedJob(job.id)}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div>
-                      <h2
-                        style={{
-                          color: "var(--text)",
-                          fontSize: "18px",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        {job.title}
-                      </h2>
-                      <p
-                        style={{
-                          fontWeight: "500",
-                          fontSize: "14px",
-                          color: "var(--primary)",
-                          marginBottom: "12px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
+                  <div className="vac-job-inner">
+                    <div className="vac-job-main">
+                      <h2 className="vac-job-title">{job.title}</h2>
+                      <p className="vac-job-company">
                         <Building2 size={14} /> {job.companyName}
                       </p>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "16px",
-                          color: "var(--muted)",
-                          fontSize: "13px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
+                      <div className="vac-job-meta">
+                        <span>
                           <MapPin size={14} /> {job.location} ({job.workMode})
                         </span>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
+                        <span>
                           <Banknote size={14} /> {job.salary}
                         </span>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        gap: "8px",
-                      }}
-                    >
+                    <div className="vac-job-badges">
                       {appliedJobs.includes(job.id) ? (
                         <span className="badge badge-selected">Applied</span>
                       ) : (
-                        <span className="badge badge-submitted">
-                          {job.type}
-                        </span>
+                        <span className="badge badge-submitted">{job.type}</span>
                       )}
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: dl.color,
-                          background: dl.bg,
-                          padding: "4px 8px",
-                          borderRadius: "4px",
-                        }}
-                      >
+                      <span className="vac-deadline-badge" style={{ color: dl.color, background: dl.bg }}>
                         {dl.text}
                       </span>
                     </div>
@@ -346,10 +303,7 @@ export default function Vacancies() {
         </div>
 
         {/* RIGHT: Details */}
-        <div
-          className="card"
-          style={{ position: "sticky", top: "24px", padding: "32px" }}
-        >
+        <div className="card vac-detail">
           {selectedJob ? (
             (() => {
               const job = vacancies.find((v) => v.id === selectedJob)!;
@@ -359,355 +313,247 @@ export default function Vacancies() {
 
               return (
                 <>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      marginBottom: "16px",
-                    }}
-                  >
+                  <div className="vac-detail-badges">
                     <span className="badge badge-shortlisted">{job.type}</span>
-                    <span className="badge badge-submitted">
-                      {job.workMode}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: dl.color,
-                        background: dl.bg,
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        marginLeft: "auto",
-                      }}
-                    >
+                    <span className="badge badge-submitted">{job.workMode}</span>
+                    <span className="vac-deadline-badge" style={{ color: dl.color, background: dl.bg, marginLeft: "auto" }}>
                       {dl.text}
                     </span>
                   </div>
 
-                  <h1 style={{ fontSize: "24px", marginBottom: "8px" }}>
-                    {job.title}
-                  </h1>
-                  <p
-                    style={{
-                      color: "var(--text)",
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      marginBottom: "4px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
+                  <h1 className="vac-detail-title">{job.title}</h1>
+                  <p className="vac-detail-company">
                     <Building2 size={18} /> {job.companyName}
                   </p>
-                  <p
-                    style={{
-                      color: "var(--muted)",
-                      fontSize: "14px",
-                      marginBottom: "24px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
+                  <p className="vac-detail-location">
                     <MapPin size={16} /> {job.location}
                   </p>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "16px",
-                      borderTop: "1px solid var(--border)",
-                      borderBottom: "1px solid var(--border)",
-                      padding: "16px 0",
-                      marginBottom: "24px",
-                    }}
-                  >
+                  <div className="vac-detail-grid">
                     <div>
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--muted)",
-                          textTransform: "uppercase",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Salary
-                      </p>
+                      <p className="vac-detail-label">Salary</p>
                       <p style={{ fontWeight: "600", color: "var(--success)" }}>
                         {job.salary || "Not disclosed"}
                       </p>
                     </div>
                     <div>
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--muted)",
-                          textTransform: "uppercase",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Deadline
-                      </p>
-                      <p
-                        style={{
-                          fontWeight: "600",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          color: isExpired ? "var(--danger)" : "var(--text)",
-                        }}
-                      >
-                        <Calendar size={14} />{" "}
-                        {new Date(job.deadline).toLocaleDateString()}
+                      <p className="vac-detail-label">Deadline</p>
+                      <p style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", color: isExpired ? "var(--danger)" : "var(--text)" }}>
+                        <Calendar size={14} /> {new Date(job.deadline).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--muted)",
-                          textTransform: "uppercase",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Min. Qual
-                      </p>
-                      <p style={{ fontWeight: "600" }}>
-                        {job.minQualification}
-                      </p>
+                      <p className="vac-detail-label">Min. Qual</p>
+                      <p style={{ fontWeight: "600" }}>{job.minQualification}</p>
                     </div>
                     <div>
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--muted)",
-                          textTransform: "uppercase",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Experience
-                      </p>
-                      <p style={{ fontWeight: "600" }}>
-                        {job.requiredYears} Years
-                      </p>
+                      <p className="vac-detail-label">Experience</p>
+                      <p style={{ fontWeight: "600" }}>{job.requiredYears} Years</p>
                     </div>
                   </div>
 
                   <h3 style={{ marginBottom: "12px" }}>Required Skills</h3>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "8px",
-                      marginBottom: "32px",
-                    }}
-                  >
+                  <div className="vac-skills">
                     {job.requiredSkills.map((skill) => (
-                      <span
-                        key={skill}
-                        style={{
-                          background: "var(--bg)",
-                          border: "1px solid var(--border)",
-                          padding: "6px 12px",
-                          borderRadius: "4px",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                        }}
-                      >
-                        {skill}
-                      </span>
+                      <span key={skill} className="vac-skill-pill">{skill}</span>
                     ))}
                   </div>
 
                   <button
-                    className="btn"
+                    className="btn vac-apply-btn"
                     onClick={handleOpenApplyModal}
                     disabled={hasApplied || isExpired}
                     style={{
-                      width: "100%",
-                      justifyContent: "center",
-                      padding: "14px",
-                      fontSize: "16px",
-                      background: hasApplied
-                        ? "var(--success)"
-                        : isExpired
-                          ? "var(--muted)"
-                          : "var(--primary)",
-                      cursor: isExpired ? "not-allowed" : "pointer",
+                      background: hasApplied ? "var(--success)" : isExpired ? "var(--muted)" : "var(--primary)",
+                      cursor: (hasApplied || isExpired) ? "not-allowed" : "pointer",
                     }}
                   >
                     {hasApplied ? (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <CheckCircle2 size={18} /> Applied Successfully
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <CheckCircle2 size={18} /> Already Applied
                       </span>
-                    ) : isExpired ? (
-                      "Application Closed"
-                    ) : (
-                      "Review & Apply"
-                    )}
+                    ) : isExpired ? "Application Closed" : "Review & Apply"}
                   </button>
                 </>
               );
             })()
           ) : (
-            <div
-              style={{
-                textAlign: "center",
-                color: "var(--muted)",
-                padding: "60px 0",
-              }}
-            >
-              <Briefcase
-                size={48}
-                style={{ opacity: 0.2, margin: "0 auto 16px auto" }}
-              />
+            <div className="vac-detail-empty">
+              <Briefcase size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
               <p>Select a job to view details.</p>
             </div>
           )}
         </div>
       </div>
 
-      
-            {/* --- EDITABLE APPLICATION REVIEW MODAL --- */}
+      {/* EDITABLE APPLICATION MODAL */}
       {isModalOpen && selectedJob && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '650px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
-            
-            {/* Modal Header */}
-            <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg)' }}>
-              <div>
-                <h2 style={{ fontSize: '22px', margin: 0, fontWeight: '700' }}>Review & Edit Application</h2>
-                <p style={{ color: 'var(--muted)', fontSize: '14px', margin: '4px 0 0 0' }}>Update your details below before submitting to the employer.</p>
+        <div
+          className="vac-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+        >
+          <div className="card vac-modal">
+
+            <div className="vac-modal-header">
+              <div style={{ minWidth: 0 }}>
+                <h2>Review & Edit Application</h2>
+                <p>Update your details below before submitting.</p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}><X size={24} /></button>
+              <button
+                type="button"
+                className="vac-modal-close"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '32px', overflowY: 'auto' }}>
-              
-              {message && (
-                <div style={{ padding: '16px', background: message.includes('success') ? 'var(--success-soft)' : 'var(--danger-soft)', color: message.includes('success') ? 'var(--success)' : 'var(--danger)', borderRadius: '8px', fontWeight: '500', fontSize: '14px' }}>
-                  {message}
-                </div>
-              )}
-
-              {/* --- SECTION 1: PROFILE INFO --- */}
+            <div className="vac-modal-body">
               <div>
-                <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <User size={18} style={{ color: 'var(--primary)' }} /> Profile Information
+                <h3 className="vac-modal-section-title">
+                  <User size={18} /> Profile Information
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="vac-modal-grid-2">
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: '13px' }}>Highest Qualification</label>
-                    <select className="select" value={modalQual} onChange={(e) => setModalQual(e.target.value)} style={{ width: '100%' }}>
-                      <option value="OND">OND</option>
-                      <option value="HND">HND</option>
-                      <option value="BSC">BSc</option>
-                      <option value="MSC">MSc</option>
-                    </select>
+                    <label style={{ fontSize: "13px" }}>Highest Qualification</label>
+                    <CustomSelect 
+  value={modalQual}
+  onChange={setModalQual}
+  options={[
+    { value: 'OND', label: 'OND' },
+    { value: 'HND', label: 'HND' },
+    { value: 'BSC', label: 'BSc' },
+    { value: 'MSC', label: 'MSc' }
+  ]}
+/>
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: '13px' }}>Years of Experience</label>
-                    <input type="number" className="input" value={modalExp} onChange={(e) => setModalExp(parseInt(e.target.value) || 0)} style={{ width: '100%' }} />
+                    <label style={{ fontSize: "13px" }}>Years of Experience</label>
+                    <input
+                      type="number"
+                      className="input"
+                      value={modalExp}
+                      onChange={(e) => setModalExp(parseInt(e.target.value) || 0)}
+                    />
                   </div>
                 </div>
               </div>
 
-              <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
+              <hr className="vac-modal-hr" />
 
-              {/* --- SECTION 2: SKILLS --- */}
               <div>
-                <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Briefcase size={18} style={{ color: 'var(--primary)' }} /> Skills
+                <h3 className="vac-modal-section-title">
+                  <Briefcase size={18} /> Skills
                 </h3>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label style={{ fontSize: '13px' }}>Skills (Comma Separated)</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={modalSkills} 
-                    onChange={(e) => setModalSkills(e.target.value)} 
+                  <label style={{ fontSize: "13px" }}>Skills (Comma Separated)</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={modalSkills}
+                    onChange={(e) => setModalSkills(e.target.value)}
                     placeholder="e.g. React, TypeScript, CSS"
-                    style={{ width: '100%' }}
                   />
-                  <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>The screening engine will match these exactly against the job requirements.</p>
+                  <p style={{ fontSize: "12px", color: "var(--muted)", marginTop: "8px" }}>
+                    The screening engine will match these exactly against the job requirements.
+                  </p>
                 </div>
               </div>
 
-              <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
+              {profile?.additionalInfo && profile.additionalInfo.length > 0 && (
+                <>
+                  <hr className="vac-modal-hr" />
+                  <div>
+                    <h3 className="vac-modal-section-title">
+                      <FileText size={18} /> Additional Information
+                    </h3>
+                    <div className="vac-modal-info">
+                      {profile.additionalInfo.map((info, index) => (
+                        <div
+                          key={index}
+                          className="vac-modal-info-row"
+                          style={{
+                            borderBottom: index !== profile.additionalInfo!.length - 1
+                              ? "1px dashed var(--border)"
+                              : "none",
+                          }}
+                        >
+                          <span className="vac-modal-info-label">{info.label}</span>
+                          <span className="vac-modal-info-value">{info.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
-              {/* --- SECTION 3: CV / RESUME --- */}
+              <hr className="vac-modal-hr" />
+
               <div>
-                <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <UploadCloud size={18} style={{ color: 'var(--primary)' }} /> CV / Resume
+                <h3 className="vac-modal-section-title">
+                  <UploadCloud size={18} /> CV / Resume
                 </h3>
-                
-                <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".pdf,.doc,.docx" onChange={handleCvUpload} />
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleCvUpload}
+                />
 
                 {modalCvUrl ? (
-                  <div style={{ 
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-                    padding: '20px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px' 
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '8px', color: '#dc2626' }}>
+                  <div className="vac-modal-cv">
+                    <div className="vac-modal-cv-left">
+                      <div className="vac-modal-cv-icon">
                         <FileText size={24} />
                       </div>
-                      <div>
-                        <p style={{ fontSize: '15px', fontWeight: '600', margin: 0, color: 'var(--text)' }}>Uploaded_Resume.pdf</p>
-                        <p style={{ fontSize: '13px', color: 'var(--success)', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <p className="vac-modal-cv-name">Uploaded_Resume.pdf</p>
+                        <p className="vac-modal-cv-status">
                           <CheckCircle2 size={14} /> Attached to application
                         </p>
                       </div>
                     </div>
-                    <button 
+                    <button
                       type="button"
-                      className="btn btn-outline" 
-                      style={{ fontSize: '13px', padding: '8px 16px', background: '#fff' }}
+                      className="btn btn-outline vac-modal-cv-replace"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
                     >
-                      {isUploading ? 'Uploading...' : 'Replace'}
+                      {isUploading ? "Uploading..." : "Replace"}
                     </button>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     onClick={() => fileInputRef.current?.click()}
-                    style={{ 
-                      border: '2px dashed var(--border)', borderRadius: '8px', padding: '32px 16px', 
-                      textAlign: 'center', cursor: 'pointer', background: 'var(--bg)' 
-                    }}
+                    className="vac-modal-dropzone"
                   >
-                    <UploadCloud size={32} style={{ color: 'var(--primary)', margin: '0 auto 12px auto' }} />
-                    <p style={{ fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0', color: 'var(--text)' }}>Click to upload your CV</p>
-                    <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>PDF or DOCX (Max 5MB)</p>
+                    <UploadCloud size={32} style={{ color: "var(--primary)", marginBottom: 12 }} />
+                    <p className="vac-modal-dropzone-title">Click to upload your CV</p>
+                    <p className="vac-modal-dropzone-hint">PDF or DOCX (Max 5MB)</p>
                   </div>
                 )}
               </div>
-
             </div>
 
-            {/* Modal Footer */}
-            <div style={{ padding: '20px 32px', borderTop: '1px solid var(--border)', background: 'var(--bg)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
-              <button className="btn" onClick={handleFinalSubmit} disabled={applying || message.includes('success')} style={{ padding: '10px 24px' }}>
-                {applying ? 'Submitting...' : 'Save & Submit Application'}
+            <div className="vac-modal-footer">
+              <button className="btn btn-outline" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn"
+                onClick={handleFinalSubmit}
+                disabled={applying}
+                style={{ padding: "10px 24px" }}
+              >
+                {applying ? "Submitting..." : "Save & Submit Application"}
               </button>
             </div>
-
           </div>
         </div>
       )}
-      
     </div>
   );
 }

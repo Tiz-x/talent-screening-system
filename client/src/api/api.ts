@@ -35,6 +35,7 @@ export const api = {
     skills: string[];
     experienceYrs: number;
     cvUrl: string | null;
+    additionalInfo?: { label: string; value: string }[];
   }) => {
     const token = localStorage.getItem('token');
     const res = await fetch(`${API_URL}/api/profile/applicant`, {
@@ -83,13 +84,13 @@ export const api = {
     return res.json();
   },
 
-  // 5. Get Vacancies
-  getVacancies: async () => {
+  getVacancies: async (includeExpired = false) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/api/vacancies`, {
-      headers: { 
-        'Authorization': `Bearer ${token}` 
-      },
+    // If includeExpired is true, we add a query param
+    const url = includeExpired ? `${API_URL}/api/vacancies?all=true` : `${API_URL}/api/vacancies`;
+    
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Failed to fetch vacancies');
     return res.json();

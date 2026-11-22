@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { calculateScore } from './services/screening';
+import { sendEmail } from './services/email'; // <-- Import Email Service
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -111,13 +112,13 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/profile/applicant', authenticateToken, async (req: any, res: any) => {
   try {
-    const { qualification, skills, experienceYrs, cvUrl } = req.body;
+    const { qualification, skills, experienceYrs, cvUrl, additionalInfo } = req.body;
     const userId = req.user.userId;
 
     const profile = await prisma.applicantProfile.upsert({
       where: { userId },
-      update: { qualification, skills, experienceYrs, cvUrl },
-      create: { userId, qualification, skills, experienceYrs, cvUrl },
+      update: { qualification, skills, experienceYrs, cvUrl, additionalInfo },
+      create: { userId, qualification, skills, experienceYrs, cvUrl, additionalInfo },
     });
 
     res.status(200).json({ message: 'Profile saved successfully', profile });
@@ -159,10 +160,15 @@ app.post('/api/vacancies', authenticateToken, async (req: any, res: any) => {
 });
 
 // GET ALL VACANCIES
-app.get('/api/vacancies', authenticateToken, async (req, res) => {
+app.get('/api/vacancies', authenticateToken, async (req: any, res: any) => {
   try {
+    const includeAll = req.query.all === 'true' && req.user.role === 'EMPLOYER';
+    
     const vacancies = await prisma.vacancy.findMany({
-      where: { status: 'PUBLISHED' },
+      where: { 
+        status: 'PUBLISHED',
+        deadline: includeAll ? undefined : { gte: new Date() }
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
@@ -177,7 +183,6 @@ app.get('/api/vacancies', authenticateToken, async (req, res) => {
   }
 });
 
-
 // APPLY FOR A VACANCY
 app.post('/api/applications', authenticateToken, async (req: any, res: any) => {
   try {
@@ -188,7 +193,6 @@ app.post('/api/applications', authenticateToken, async (req: any, res: any) => {
     const { vacancyId } = req.body;
     const applicantId = req.user.userId;
 
-    // 1. Check if the vacancy exists and is still open
     const vacancy = await prisma.vacancy.findUnique({ where: { id: vacancyId } });
     if (!vacancy) return res.status(404).json({ error: 'Vacancy not found' });
     
@@ -196,7 +200,6 @@ app.post('/api/applications', authenticateToken, async (req: any, res: any) => {
       return res.status(400).json({ error: 'The application deadline for this job has passed.' });
     }
 
-    // 2. Check if they already applied
     const existingApp = await prisma.application.findUnique({
       where: { vacancyId_applicantId: { vacancyId, applicantId } }
     });
@@ -205,10 +208,21 @@ app.post('/api/applications', authenticateToken, async (req: any, res: any) => {
       return res.status(400).json({ error: 'You have already applied for this job' });
     }
 
-    // 3. Create the application
     const application = await prisma.application.create({
       data: { vacancyId, applicantId, status: 'SUBMITTED' }
     });
+
+    // --- EMAIL NOTIFICATION: Application Received ---
+    const applicant = await prisma.user.findUnique({ where: { id: applicantId } });
+    if (applicant) {
+      await sendEmail(
+        applicant.email,
+        `Application Received: ${vacancy.title}`,
+        `<p>Hi ${applicant.name},</p>
+         <p>Your application for <strong>${vacancy.title}</strong> at <strong>${vacancy.companyName}</strong> has been received successfully.</p>
+         <p>You can track your status on your dashboard.</p>`
+      );
+    }
 
     res.status(201).json({ message: 'Application submitted successfully', application });
   } catch (error) {
@@ -216,7 +230,6 @@ app.post('/api/applications', authenticateToken, async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to submit application' });
   }
 });
-
 
 // --- SCREENING ENGINE ROUTE ---
 
@@ -238,7 +251,7 @@ app.get('/api/vacancies/:vacancyId/screen', authenticateToken, async (req: any, 
       }
     });
 
-        const results = applications.map((app) => {
+    const results = applications.map((app) => {
       const profile = app.applicant.applicantProfile;
       
       if (!profile) {
@@ -246,7 +259,8 @@ app.get('/api/vacancies/:vacancyId/screen', authenticateToken, async (req: any, 
           applicationId: app.id, 
           applicantName: app.applicant.name,
           profile: null,
-          knockedOut: true, reason: 'Profile incomplete', totalScore: 0, breakdown: null
+          knockedOut: true, reason: 'Profile incomplete', totalScore: 0, breakdown: null,
+          status: app.status
         };
       }
 
@@ -255,17 +269,18 @@ app.get('/api/vacancies/:vacancyId/screen', authenticateToken, async (req: any, 
       return {
         applicationId: app.id, 
         applicantName: app.applicant.name, 
+        status: app.status,
         profile: {
           qualification: profile.qualification,
           skills: profile.skills,
           experienceYrs: profile.experienceYrs,
-          cvUrl: profile.cvUrl
+          cvUrl: profile.cvUrl,
+          additionalInfo: profile.additionalInfo
         },
         ...scoreResult
       };
     });
 
-    // Sort by Total Score -> Skills Score -> Experience Score
     results.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       if (b.breakdown?.skillsScore !== a.breakdown?.skillsScore) {
@@ -281,25 +296,19 @@ app.get('/api/vacancies/:vacancyId/screen', authenticateToken, async (req: any, 
   }
 });
 
+// --- INTERNSHIP ROUTES ---
 
-
-// 1. Create Internship 
 app.post('/api/internships', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'EMPLOYER') return res.status(403).json({ error: 'Only employers can post internships' });
     
-    const { title, companyName, description, location, duration, deadline } = req.body; // <-- Add companyName here
+    const { title, companyName, description, location, duration, deadline } = req.body;
 
     const internship = await prisma.internship.create({
       data: {
         employerId: req.user.userId,
-        title, 
-        companyName,
-        description, 
-        location, 
-        duration,
-        deadline: new Date(deadline),
-        status: 'PUBLISHED'
+        title, companyName, description, location, duration,
+        deadline: new Date(deadline), status: 'PUBLISHED'
       }
     });
     res.status(201).json({ message: 'Internship created', internship });
@@ -309,7 +318,6 @@ app.post('/api/internships', authenticateToken, async (req: any, res: any) => {
   }
 });
 
-// 2. Get All Internships (Applicants & Employers)
 app.get('/api/internships', authenticateToken, async (req, res) => {
   try {
     const internships = await prisma.internship.findMany({
@@ -323,7 +331,6 @@ app.get('/api/internships', authenticateToken, async (req, res) => {
   }
 });
 
-// 3. Apply for Internship (Applicant)
 app.post('/api/internships/:internshipId/apply', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'APPLICANT') return res.status(403).json({ error: 'Only applicants can apply' });
@@ -347,7 +354,6 @@ app.post('/api/internships/:internshipId/apply', authenticateToken, async (req: 
   }
 });
 
-// GET MY INTERNSHIP APPLICATIONS (Applicant)
 app.get('/api/internships/my', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'APPLICANT') {
@@ -356,9 +362,7 @@ app.get('/api/internships/my', authenticateToken, async (req: any, res: any) => 
 
     const applications = await prisma.internshipApplication.findMany({
       where: { applicantId: req.user.userId },
-      include: {
-        internship: true,
-      },
+      include: { internship: true },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -369,8 +373,6 @@ app.get('/api/internships/my', authenticateToken, async (req: any, res: any) => 
   }
 });
 
-
-// GET APPLICANTS FOR A SPECIFIC INTERNSHIP (Employer)
 app.get('/api/internships/:internshipId/applicants', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'EMPLOYER') {
@@ -381,11 +383,6 @@ app.get('/api/internships/:internshipId/applicants', authenticateToken, async (r
 
     const applications = await prisma.internshipApplication.findMany({
       where: { internshipId },
-      include: {
-        // We need to join with User to get the applicant's name
-        // Note: In our schema, InternshipApplication only has applicantId.
-        // We'll do a manual fetch for the user details.
-      }
     });
 
     const results = await Promise.all(applications.map(async (app) => {
@@ -409,8 +406,8 @@ app.get('/api/internships/:internshipId/applicants', authenticateToken, async (r
   }
 });
 
+// --- DASHBOARD ROUTES ---
 
-// GET MY APPLICATIONS (Applicant)
 app.get('/api/applications/my', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'APPLICANT') {
@@ -419,9 +416,7 @@ app.get('/api/applications/my', authenticateToken, async (req: any, res: any) =>
 
     const applications = await prisma.application.findMany({
       where: { applicantId: req.user.userId },
-      include: {
-        vacancy: true, 
-      },
+      include: { vacancy: true },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -432,8 +427,6 @@ app.get('/api/applications/my', authenticateToken, async (req: any, res: any) =>
   }
 });
 
-
-// GET EMPLOYER DASHBOARD STATS & CHART DATA
 app.get('/api/dashboard/employer', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'EMPLOYER') {
@@ -449,7 +442,6 @@ app.get('/api/dashboard/employer', authenticateToken, async (req: any, res: any)
       select: { status: true }
     });
 
-    // Format data for the chart
     const chartData = [
       { name: 'Submitted', count: applications.filter(a => a.status === 'SUBMITTED').length },
       { name: 'Under Review', count: applications.filter(a => a.status === 'UNDER_REVIEW').length },
@@ -473,8 +465,6 @@ app.get('/api/dashboard/employer', authenticateToken, async (req: any, res: any)
   }
 });
 
-
-// GET APPLICANT DASHBOARD STATS
 app.get('/api/dashboard/applicant', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'APPLICANT') {
@@ -490,14 +480,13 @@ app.get('/api/dashboard/applicant', authenticateToken, async (req: any, res: any
     const shortlisted = applications.filter(a => a.status === 'SHORTLISTED' || a.status === 'INTERVIEW' || a.status === 'SELECTED').length;
     const interviews = applications.filter(a => a.status === 'INTERVIEW').length;
 
-    // Format data for the donut chart
     const chartData = [
       { name: 'Submitted', value: applications.filter(a => a.status === 'SUBMITTED').length },
       { name: 'Under Review', value: applications.filter(a => a.status === 'UNDER_REVIEW').length },
       { name: 'Shortlisted', value: applications.filter(a => a.status === 'SHORTLISTED').length },
       { name: 'Interview', value: applications.filter(a => a.status === 'INTERVIEW').length },
       { name: 'Rejected', value: applications.filter(a => a.status === 'REJECTED').length },
-    ].filter(item => item.value > 0); // Only show statuses that have at least 1 application
+    ].filter(item => item.value > 0);
 
     res.status(200).json({ totalApplications, shortlisted, interviews, chartData });
   } catch (error) {
@@ -506,8 +495,8 @@ app.get('/api/dashboard/applicant', authenticateToken, async (req: any, res: any
   }
 });
 
+// --- PROFILE & UPLOAD ROUTES ---
 
-// GET APPLICANT PROFILE
 app.get('/api/profile/applicant', authenticateToken, async (req: any, res: any) => {
   try {
     const profile = await prisma.applicantProfile.findUnique({
@@ -525,33 +514,26 @@ app.get('/api/profile/applicant', authenticateToken, async (req: any, res: any) 
   }
 });
 
-
-// UPLOAD CV
 app.post('/api/upload/cv', authenticateToken, upload.single('cv'), async (req: any, res: any) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Upload to Cloudinary using a stream
     const uploadStream = cloudinary.uploader.upload_stream(
-      { resource_type: 'auto', folder: 'talent_screening_cvs' },
+      { resource_type: 'image', folder: 'talent_screening_cvs' },
       async (error, result) => {
         if (error || !result) {
           console.error(error);
           return res.status(500).json({ error: 'Cloudinary upload failed' });
         }
 
-        // Save the URL to the user's profile in the database
         const updatedProfile = await prisma.applicantProfile.upsert({
           where: { userId: req.user.userId },
           update: { cvUrl: result.secure_url },
           create: { 
             userId: req.user.userId, 
-            qualification: 'BSC', // Defaults if they haven't created a profile yet
-            skills: [], 
-            experienceYrs: 0, 
-            cvUrl: result.secure_url 
+            qualification: 'BSC', skills: [], experienceYrs: 0, cvUrl: result.secure_url 
           },
         });
 
@@ -559,7 +541,6 @@ app.post('/api/upload/cv', authenticateToken, upload.single('cv'), async (req: a
       }
     );
 
-    // End the stream with the file buffer
     uploadStream.end(req.file.buffer);
   } catch (error) {
     console.error(error);
@@ -567,8 +548,8 @@ app.post('/api/upload/cv', authenticateToken, upload.single('cv'), async (req: a
   }
 });
 
+// --- INTERVIEW & STATUS ROUTES ---
 
-// SCHEDULE INTERVIEW (Employer)
 app.post('/api/interviews', authenticateToken, async (req: any, res: any) => {
   try {
     if (req.user.role !== 'EMPLOYER') {
@@ -577,23 +558,34 @@ app.post('/api/interviews', authenticateToken, async (req: any, res: any) => {
 
     const { applicationId, date, time, mode, link, notes } = req.body;
 
-    // Create the interview record
     const interview = await prisma.interview.create({
-      data: {
-        applicationId,
-        date: new Date(date),
-        time,
-        mode,
-        link,
-        notes
-      }
+      data: { applicationId, date: new Date(date), time, mode, link, notes }
     });
 
-    // Automatically update the application status to INTERVIEW
     await prisma.application.update({
       where: { id: applicationId },
       data: { status: 'INTERVIEW' }
     });
+
+    // --- EMAIL NOTIFICATION: Interview Scheduled ---
+    const appDetails = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { applicant: true, vacancy: true }
+    });
+
+    if (appDetails) {
+      await sendEmail(
+        appDetails.applicant.email,
+        `Interview Scheduled: ${appDetails.vacancy.title}`,
+        `<p>Hi ${appDetails.applicant.name},</p>
+         <p>An interview has been scheduled for your application.</p>
+         <p><strong>Date:</strong> ${new Date(date).toLocaleDateString()}</p>
+         <p><strong>Time:</strong> ${time}</p>
+         <p><strong>Mode:</strong> ${mode}</p>
+         <p><strong>Link/Address:</strong> ${link}</p>
+         ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}`
+      );
+    }
 
     res.status(201).json({ message: 'Interview scheduled successfully', interview });
   } catch (error) {
@@ -602,11 +594,50 @@ app.post('/api/interviews', authenticateToken, async (req: any, res: any) => {
   }
 });
 
+app.patch('/api/applications/:applicationId/status', authenticateToken, async (req: any, res: any) => {
+  try {
+    if (req.user.role !== 'EMPLOYER') {
+      return res.status(403).json({ error: 'Only employers can update statuses' });
+    }
+
+    const { applicationId } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['UNDER_REVIEW', 'SHORTLISTED', 'ASSESSMENT', 'INTERVIEW', 'SELECTED', 'REJECTED'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const updatedApp = await prisma.application.update({
+      where: { id: applicationId },
+      data: { status: status }
+    });
+
+    // --- EMAIL NOTIFICATION: Status Updated ---
+    const appDetails = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { applicant: true, vacancy: true }
+    });
+
+    if (appDetails) {
+      await sendEmail(
+        appDetails.applicant.email,
+        `Update on your application for ${appDetails.vacancy.title}`,
+        `<p>Hi ${appDetails.applicant.name},</p>
+         <p>Your application status has been updated to: <strong>${status.replace('_', ' ')}</strong>.</p>
+         <p>Log in to view more details.</p>`
+      );
+    }
+
+    res.status(200).json({ message: 'Status updated', application: updatedApp });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`API running on port ${PORT}`);
-
-  
 });
