@@ -143,12 +143,12 @@ export default function Layout() {
           )}
         </nav>
 
-        <div className="sidebar-footer">
-          <button className="sidebar-logout" onClick={handleLogoutClick}>
-            <LogOut size={18} />
-            <span>Sign out</span>
-          </button>
-        </div>
+              <div className="sidebar-footer">
+        <button className="sidebar-logout" onClick={handleLogoutClick}>
+          <LogOut size={18} />
+          <span>Sign out</span>
+        </button>
+      </div>
       </aside>
 
 <main 
