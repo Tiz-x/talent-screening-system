@@ -202,16 +202,24 @@
 
 /* Mobile: flip layout — detail panel ABOVE the list */
 @media (max-width: 900px) {
-  .apps-split {
-    display: flex;
-    flex-direction: column-reverse;       /* ← the key fix */
-    gap: 24px;
+   .apps-split {
+    display: flex !important;
+    flex-direction: column-reverse !important; /* Detail on top, list below */
+    gap: 24px !important;
+    width: 100% !important;
   }
 
+  .apps-list,
   .apps-detail {
-    position: static;                     /* un-sticky on mobile */
-    max-height: none;
-    overflow-y: visible;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+    .apps-detail {
+    position: static !important;
+    max-height: none !important;
+    overflow-y: visible !important;
     scroll-margin-top: 16px;
   }
 
@@ -254,4 +262,25 @@
 
   .apps-detail { padding: 16px; }
   .apps-detail-head h2 { font-size: 16px; }
+}
+
+/* Update the card layout for mobile */
+@media (max-width: 768px) {
+  .apps-card-inner {
+    flex-direction: column !important; /* Stack title and date/meta */
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .apps-card-meta {
+    flex-direction: row !important; /* Put badge and date side-by-side */
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .apps-card-main h3 {
+    font-size: 16px !important; 
+    overflow-wrap: anywhere !important;
+  }
 }

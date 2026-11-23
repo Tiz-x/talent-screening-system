@@ -1,22 +1,22 @@
 @import "./tokens.css";
 
-
-html, body {
-  width: 100% !important;
-  max-width: 100vw !important;
-  overflow-x: hidden !important;
-  position: relative;
+/* =========================================
+   BASE STYLES & LAYOUT LOCK
+   ========================================= */
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  min-width: 0; 
 }
 
-#root {
-  width: 100% !important;
-  max-width: 100vw !important;
-  overflow-x: hidden !important;
+html, body, #root { 
+  height: 100%; 
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden; 
 }
 
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body, #root { height: 100%; }
 body {
   font-family: var(--font);
   background: var(--bg);
@@ -24,6 +24,7 @@ body {
   font-size: 14px;
   line-height: 1.5;
 }
+
 h1 { font-size: 24px; font-weight: 700; }
 h2 { font-size: 18px; font-weight: 600; }
 h3 { font-size: 15px; font-weight: 600; }
@@ -31,23 +32,34 @@ a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* =========================================
-   LAYOUT
+   APP LAYOUT (Flex Shell)
    ========================================= */
-.app { display: flex; min-height: 100vh; background: var(--bg); }
+.app { 
+  display: flex; 
+  min-height: 100vh; 
+  background: var(--bg);
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
 
-/* Desktop Sidebar */
+/* =========================================
+   SIDEBAR (Desktop)
+   ========================================= */
 .sidebar {
-  width: 260px;
+    width: 260px;
   flex-shrink: 0;
   background: #0f172a;
   color: var(--sidebar-text);
-  padding: 24px 16px;
-  position: sticky;
+  padding: 24px 16px 0 16px;
+  position: fixed; /* Changed from sticky to fixed */
   top: 0;
+  left: 0;
+  bottom: 0; /* Ensure it stretches to the bottom */
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow-y: auto; /* Allows scrolling inside the sidebar if it's too long */
   z-index: 40;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -61,13 +73,20 @@ a:hover { text-decoration: underline; }
   flex-shrink: 0;
 }
 
-.sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.sidebar-nav { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  flex: 1; 
+  overflow-y: auto; 
+  padding-bottom: 16px;
+}
 
 .sidebar a,
 .sidebar-logout {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 12px 14px;
   border-radius: 8px;
   color: var(--sidebar-text);
@@ -83,24 +102,47 @@ a:hover { text-decoration: underline; }
   text-decoration: none;
 }
 
-.sidebar a svg, .sidebar-logout svg { flex-shrink: 0; opacity: 0.8; }
-.sidebar a:hover, .sidebar-logout:hover { background: rgba(255,255,255,0.08); color: #fff; text-decoration: none; }
+.sidebar a svg, .sidebar-logout svg { 
+  flex-shrink: 0; 
+  opacity: 0.8; 
+  width: 18px; 
+  height: 18px;
+}
+
+.sidebar a:hover, .sidebar-logout:hover { 
+  background: rgba(255,255,255,0.08); 
+  color: #fff; 
+  text-decoration: none; 
+}
+
 .sidebar a.active { background: var(--primary); color: #fff; }
 .sidebar a.active svg { opacity: 1; }
-.sidebar-logout { margin-top: auto; color: var(--sidebar-text); }
 
-/* Main Content */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 0 24px 0;
+  flex-shrink: 0;
+  background: #0f172a;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+/* =========================================
+   MAIN CONTENT
+   ========================================= */
 .main {
   flex: 1;
   min-width: 0;
   width: 100%;
   padding: 24px 32px;
   max-width: 1280px;
+  margin-left: 260px !important;
   margin-inline: auto;
   overflow-x: hidden;
 }
 
-/* Mobile Top Bar (Hidden on Desktop) */
+/* =========================================
+   MOBILE TOP BAR & DRAWER
+   ========================================= */
 .mobile-topbar { display: none; }
 
 .icon-btn {
@@ -117,7 +159,6 @@ a:hover { text-decoration: underline; }
 }
 .icon-btn:hover { background: var(--bg); }
 
-/* Backdrop */
 .sidebar-backdrop {
   display: none;
   position: fixed;
@@ -131,7 +172,9 @@ a:hover { text-decoration: underline; }
   transition: opacity 0.3s ease;
 }
 
-/* Cards, Buttons, Forms, Tables, Badges (Unchanged) */
+/* =========================================
+   SHARED UI (Cards, Buttons, Forms, Tables)
+   ========================================= */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--space-4); }
 .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); }
 .stat-value { font-size: 28px; font-weight: 700; color: var(--primary); }
@@ -180,26 +223,45 @@ a:hover { text-decoration: underline; }
 .modal-btn { flex: 1; justify-content: center; }
 
 /* =========================================
-   RESPONSIVE
+   CUSTOM SELECT COMPONENT
+   ========================================= */
+.custom-select-wrapper { position: relative; width: 100%; }
+.custom-select-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; font: 14px var(--font); color: var(--text); cursor: pointer; transition: border-color 0.15s ease, box-shadow 0.15s ease; text-align: left; }
+.custom-select-trigger:focus, .custom-select-trigger.open { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+.custom-select-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.custom-select-icon { color: var(--muted); transition: transform 0.2s ease; flex-shrink: 0; }
+.custom-select-icon.open { transform: rotate(180deg); }
+.custom-select-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1); z-index: 50; max-height: 220px; overflow-y: auto; padding: 4px; animation: fadeIn 0.15s ease-out; }
+.custom-select-dropdown::-webkit-scrollbar { width: 6px; }
+.custom-select-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.custom-select-option { padding: 10px 12px; font-size: 14px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: var(--text); transition: background 0.1s ease; }
+.custom-select-option:hover { background: var(--bg); }
+.custom-select-option.selected { background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+.custom-select-check { color: var(--primary); }
+
+/* Force Recharts to stay inside its box */
+.recharts-responsive-container { width: 100% !important; min-width: 0 !important; }
+
+/* =========================================
+   RESPONSIVE (Mobile & Tablet)
    ========================================= */
 @media (max-width: 1024px) {
-  .main { padding: 20px 16px; }
-  .split { grid-template-columns: 1fr; }
-  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  
-  /* Show Top Bar */
-  .mobile-topbar {
+  /* 1. Mobile Top Bar */
+    .mobile-topbar {
     display: flex;
-    position: sticky;
+    position: fixed; /* Changed from sticky to fixed */
     top: 0;
-    z-index: 50;
-    background: rgba(255, 255, 255, 0.9);
+    left: 0;
+    right: 0;
+    z-index: 1000; /* Ensure it's above everything */
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     padding: 12px 16px;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
   }
 
   .mobile-brand {
@@ -209,317 +271,67 @@ a:hover { text-decoration: underline; }
     letter-spacing: -0.5px;
   }
 
-  /* Transform Sidebar into Drawer */
+  /* 2. Drawer Logic */
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
+    height: 100dvh;
     width: 280px;
     max-width: 85vw;
     transform: translateX(-100%);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
-    z-index: 50;
+    z-index: 100;
   }
 
   .sidebar.mobile-open {
     transform: translateX(0);
   }
 
-  /* Make backdrop clickable */
   .sidebar-backdrop { display: block; }
   .sidebar-backdrop.visible { opacity: 1; pointer-events: auto; }
+
+  /* 3. Main takes full width */
+  .main {
+    margin-left: 0 !important;
+    width: 100%;
+    max-width: 100vw;
+    padding: 80px 16px 20px 16px !important;
+  }
+
+  .split { grid-template-columns: 1fr; }
+  
+  /* 4. Force 2x2 Grid on Mobile */
+  .stat-grid { 
+    grid-template-columns: repeat(2, 1fr) !important; 
+    gap: 12px !important; 
+  }
+
+  .stat-grid .card {
+    padding: 16px 12px !important;
+  }
+
+  .stat-label {
+    font-size: 12px !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+  }
+}
+
+/* Only stack stat cards on VERY tiny screens (under 360px) */
+@media (max-width: 360px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
-  .main { padding: 16px 12px; }
+  .main { padding: 16px 12px; padding-top: 80px !important; }
+  
   .stat-value { font-size: 22px; }
   .modal-overlay { padding: 16px; align-items: center; }
   .modal-card { max-width: 100%; border-radius: 12px; }
   .modal-actions { flex-direction: column-reverse; }
   .modal-btn { width: 100%; }
-}
-
-/* =========================================
-   CUSTOM SELECT COMPONENT
-   ========================================= */
-.custom-select-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.custom-select-trigger {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #fff;
-  font: 14px var(--font);
-  color: var(--text);
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  text-align: left;
-}
-
-.custom-select-trigger:focus,
-.custom-select-trigger.open {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-soft);
-}
-
-.custom-select-value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.custom-select-icon {
-  color: var(--muted);
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-}
-
-.custom-select-icon.open {
-  transform: rotate(180deg);
-}
-
-.custom-select-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
-  z-index: 50;
-  max-height: 220px;
-  overflow-y: auto;
-  padding: 4px;
-  animation: fadeIn 0.15s ease-out;
-}
-
-/* Custom Scrollbar for dropdown */
-.custom-select-dropdown::-webkit-scrollbar { width: 6px; }
-.custom-select-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-.custom-select-option {
-  padding: 10px 12px;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--text);
-  transition: background 0.1s ease;
-}
-
-.custom-select-option:hover {
-  background: var(--bg);
-}
-
-.custom-select-option.selected {
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-weight: 500;
-}
-
-.custom-select-check {
-  color: var(--primary);
-}
-
-
-
-/* =========================================
-   FORCE FIX: SIDEBAR ICON SPACING
-   ========================================= */
-.sidebar a, 
-.sidebar-logout {
-  display: flex !important;
-  align-items: center !important;
-  gap: 14px !important; /* Forces the space between icon and text */
-  text-decoration: none !important;
-}
-
-.sidebar a svg, 
-.sidebar-logout svg {
-  flex-shrink: 0 !important;
-  margin: 0 !important;
-  width: 18px !important;
-  height: 18px !important;
-}
-
-
-/* =========================================
-   FORCE FIX: PREVENT HORIZONTAL SWIPING
-   ========================================= */
-html, body, #root {
-  max-width: 100vw !important;
-  overflow-x: hidden !important;
-}
-
-.app {
-  overflow-x: hidden !important;
-  width: 100% !important;
-}
-
-
-
-/* =========================================
-   GLOBAL LAYOUT LOCK
-   ========================================= */
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-#root {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-.app {
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-.main {
-  width: 100%;
-  max-width: 100vw;
-  min-width: 0;
-  overflow-x: hidden;
-}
-
-* {
-  min-width: 0;
-}
-
-
-/* =========================================
-   FINAL LAYOUT FIX
-   ========================================= */
-
-html, body {
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-#root {
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-.app {
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-.main {
-  width: 100%;
-  max-width: 100vw;
-  min-width: 0;
-  overflow-x: hidden;
-}
-
-/* Force Recharts to stay inside its box */
-.recharts-responsive-container {
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
-
-
-
-
-/* =========================================
-   FINAL SIDEBAR LOCK
-   ========================================= */
-.sidebar {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  bottom: 0 !important;
-  height: 100vh !important;
-  width: 260px !important;
-  z-index: 40 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
-/* Push the main content to the right so it doesn't hide under the sidebar */
-@media (min-width: 1025px) {
-  .main {
-    margin-left: 260px !important;
-    width: calc(100% - 260px) !important;
-    max-width: calc(100vw - 260px) !important;
-  }
-}
-
-/* Mobile logic for the drawer */
-@media (max-width: 1024px) {
-  .sidebar {
-    transform: translateX(-100%) !important;
-  }
-  .sidebar.mobile-open {
-    transform: translateX(0) !important;
-  }
-  .main {
-    margin-left: 0 !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-  }
-}
-
-/* Force everything to stop horizontal scrolling */
-html, body, #root, .app {
-  max-width: 100vw !important;
-  overflow-x: hidden !important;
-}
-
-
-
-/* =========================================
-   FINAL SIGN OUT BUTTON FIX
-   ========================================= */
-
-.sidebar-footer {
-  margin-top: auto;
-  padding: 16px 0; /* Keep some breathing room */
-  flex-shrink: 0;
-  width: 100%;
-}
-
-.sidebar-logout {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background: transparent; /* Ensure no background color */
-  border: none;
-  color: var(--sidebar-text);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  font-family: inherit;
-}
-
-.sidebar-logout:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-.sidebar-logout svg {
-  flex-shrink: 0;
 }

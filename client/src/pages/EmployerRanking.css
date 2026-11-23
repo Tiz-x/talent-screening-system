@@ -266,8 +266,17 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .er-split {
-    grid-template-columns: 1fr; /* stack table + detail */
+ .er-split {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+
+   .er-table-card, 
+  .er-detail {
+    width: 100% !important;
+    min-width: 0 !important; /* Prevents overflow */
   }
 
   .er-table-scroll .table {
@@ -348,5 +357,40 @@
 
   .er-empty {
     padding: 48px 16px;
+  }
+}
+
+
+@media (max-width: 768px) {
+  /* Force the table to be at least 500px wide inside its scroll container */
+  .er-table-scroll .table {
+    min-width: 500px !important;
+  }
+
+  /* Make sure the scroll container itself is full width */
+  .er-table-scroll {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    display: block !important;
+  }
+}
+
+
+/* Force text to wrap inside the detail panel */
+.er-detail {
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+.er-detail * {
+  max-width: 100% !important;
+}
+
+/* Make the profile grid stack on mobile so it doesn't cramp */
+@media (max-width: 480px) {
+  .er-profile-grid {
+    grid-template-columns: 1fr !important;
   }
 }
