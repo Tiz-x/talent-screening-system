@@ -159,16 +159,30 @@ app.post('/api/vacancies', authenticateToken, async (req: any, res: any) => {
   }
 });
 
+
 // GET ALL VACANCIES
 app.get('/api/vacancies', authenticateToken, async (req: any, res: any) => {
   try {
-    const includeAll = req.query.all === 'true' && req.user.role === 'EMPLOYER';
-    
+    let whereClause: any = { status: 'PUBLISHED' };
+
+    // If the user is an Employer, only show THEIR vacancies
+    if (req.user.role === 'EMPLOYER') {
+      whereClause = { 
+        ...whereClause, 
+        employerId: req.user.userId 
+      };
+      
+      // If they want to see expired jobs too (for screening past applicants)
+      if (req.query.all !== 'true') {
+        whereClause.deadline = { gte: new Date() };
+      }
+    } else {
+      // If the user is an Applicant, only show jobs that haven't expired
+      whereClause.deadline = { gte: new Date() };
+    }
+
     const vacancies = await prisma.vacancy.findMany({
-      where: { 
-        status: 'PUBLISHED',
-        deadline: includeAll ? undefined : { gte: new Date() }
-      },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
@@ -182,6 +196,7 @@ app.get('/api/vacancies', authenticateToken, async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to fetch vacancies' });
   }
 });
+
 
 // APPLY FOR A VACANCY
 app.post('/api/applications', authenticateToken, async (req: any, res: any) => {
